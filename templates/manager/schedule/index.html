@@ -1,0 +1,820 @@
+{% extends "base.html" %}
+{% block title %}Production Plan{% endblock %}
+
+{% block head %}
+<style>
+/* ── Schedule page layout ── */
+.sched-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 1100px) { .sched-grid { grid-template-columns: 1fr; } }
+
+/* Tabs */
+.sched-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+.sched-tab {
+  font-family: var(--font-head);
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: .65rem 1.25rem;
+  border: none;
+  background: transparent;
+  color: var(--text-sec);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--transition);
+}
+.sched-tab:hover { color: var(--text); }
+.sched-tab.active { color: var(--green); border-bottom-color: var(--green); }
+.sched-tab-count {
+  display: inline-block;
+  margin-left: .4rem;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.06);
+  font-size: .68rem;
+  color: var(--text-sec);
+}
+.sched-tab.active .sched-tab-count {
+  background: rgba(93,224,138,.18);
+  color: var(--green);
+}
+
+/* Pane visibility */
+.pane { display: none; }
+.pane.active { display: block; }
+
+/* Job card */
+.job-card {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  margin-bottom: .45rem;
+  transition: border-color var(--transition);
+}
+.job-card:hover { border-color: var(--border2); }
+.job-card.late { border-left-color: var(--red); }
+.job-card.inprog { border-left-color: var(--amber); }
+.job-card.scheduled { border-left-color: var(--green); }
+.job-card.unsched { border-left-color: var(--text-sec); }
+.job-card.locked { border-left-color: var(--purple); }
+
+.job-card-main { flex: 1; min-width: 0; }
+.job-card-head {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  margin-bottom: .2rem;
+}
+.job-num {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: .95rem;
+  color: var(--green);
+}
+.job-desc {
+  font-size: .82rem;
+  color: var(--text);
+  margin-bottom: .2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.job-meta {
+  display: flex; gap: .65rem; flex-wrap: wrap;
+  font-size: .75rem; color: var(--text-sec);
+}
+.job-meta strong { color: var(--text); }
+.job-meta .late { color: var(--red); font-weight: 700; }
+
+.job-actions {
+  display: flex; gap: .35rem; flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Search bar */
+.search-box {
+  position: relative;
+  margin-bottom: .85rem;
+}
+.search-input {
+  width: 100%;
+  background: rgba(0,0,0,.5);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: .9rem;
+  padding: .55rem .85rem .55rem 2.2rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.search-input:focus { border-color: var(--green); }
+.search-input::placeholder { color: var(--text-dim); }
+.search-icon {
+  position: absolute;
+  left: .75rem; top: 50%; transform: translateY(-50%);
+  color: var(--text-sec); font-size: 1rem;
+}
+.search-clear {
+  position: absolute;
+  right: .5rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-sec);
+  cursor: pointer; font-size: 1.2rem; padding: .2rem;
+  display: none;
+}
+.search-input:not(:placeholder-shown) + .search-clear { display: block; }
+
+/* Filter chips */
+.filter-row {
+  display: flex; gap: .35rem; margin-bottom: .75rem; flex-wrap: wrap;
+}
+.filter-chip {
+  font-family: var(--font-head);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .25rem .65rem;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text-sec);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.filter-chip.active {
+  background: rgba(93,224,138,.12);
+  color: var(--green);
+  border-color: var(--green);
+}
+
+/* Operator picker modal */
+.modal-bg {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--card);
+  border: 1px solid var(--green);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  max-width: 520px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-title {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: .25rem;
+}
+.modal-sub {
+  font-size: .85rem;
+  color: var(--text-sec);
+  margin-bottom: 1rem;
+}
+.op-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .65rem .85rem;
+  margin-bottom: .35rem;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.op-option:hover { border-color: var(--green); background: rgba(93,224,138,.05); }
+.op-option-name {
+  font-family: var(--font-head);
+  font-weight: 700;
+  color: var(--text);
+}
+.op-option-meta {
+  font-size: .72rem;
+  color: var(--text-sec);
+}
+.op-option-hours {
+  font-family: var(--font-head);
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--green);
+}
+.op-option-hours.full { color: var(--amber); }
+.op-option-hours.over { color: var(--red); }
+
+/* Week selector for assigning */
+.week-picker {
+  display: flex; gap: .25rem; flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.week-btn {
+  font-family: var(--font-head);
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .35rem .7rem;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text-sec);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.week-btn.active {
+  background: rgba(93,224,138,.12);
+  color: var(--green);
+  border-color: var(--green);
+}
+
+/* Empty state */
+.empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--text-sec);
+  font-size: .9rem;
+  border: 1px dashed var(--border2);
+  border-radius: var(--radius);
+}
+
+/* Section header */
+.sec-h {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .65rem;
+}
+.sec-h-title {
+  font-family: var(--font-head);
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-sec);
+  display: flex; align-items: center; gap: .4rem;
+}
+.sec-h-title .count {
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: .72rem;
+}
+
+/* Readiness strip */
+.readiness {
+  display: flex; gap: .75rem; align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .75rem 1.1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.readiness-label {
+  font-family: var(--font-head);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-sec);
+  flex-shrink: 0;
+}
+.readiness-check {
+  display: flex; align-items: center; gap: .4rem;
+  cursor: pointer;
+  padding: .25rem .6rem;
+  border-radius: var(--radius);
+  transition: background var(--transition);
+}
+.readiness-check:hover { background: rgba(255,255,255,.04); }
+.readiness-check .check-icon { font-size: 1rem; color: var(--text-sec); font-weight: 700; }
+.readiness-check.ok { background: rgba(93,224,138,.08); }
+.readiness-check.ok .check-icon { color: var(--green); }
+.readiness-check.ok span { color: var(--green); }
+
+/* Hours pill */
+.hours-pill {
+  display: inline-flex;
+  font-family: var(--font-head);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(93,224,138,.1);
+  color: var(--green);
+}
+
+/* Gantt (kept simple for the third tab) */
+.gantt-row {
+  display: flex; align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  padding: .25rem 0;
+}
+.gantt-name {
+  width: 130px; flex-shrink: 0;
+  padding: .35rem .75rem;
+  font-family: var(--font-head);
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.gantt-name small {
+  display: block; color: var(--text-sec);
+  font-size: .68rem; font-weight: 400;
+}
+.gantt-bar-track {
+  flex: 1; height: 32px;
+  background: rgba(255,255,255,.03);
+  border-radius: 4px;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+.gantt-bar {
+  font-family: var(--font-head);
+  font-size: .68rem;
+  font-weight: 700;
+  color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(0,0,0,.3);
+  cursor: pointer;
+}
+.gantt-bar.inprog { background: var(--amber); }
+.gantt-bar.scheduled { background: var(--green); }
+.gantt-bar.late { background: var(--red); color: #fff; }
+.gantt-bar.locked {
+  background: var(--purple);
+  background-image: repeating-linear-gradient(45deg,
+    rgba(0,0,0,.15) 0, rgba(0,0,0,.15) 2px,
+    transparent 2px, transparent 6px);
+}
+
+/* Section label used in Gantt */
+.section-label {
+  font-family: var(--font-head);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-sec);
+  margin: .75rem 0 .4rem;
+}
+
+/* Gantt operator name */
+.gantt-name {
+  min-width: 130px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Production Plan</h1>
+    <p class="page-sub">Week commencing <strong style="color:var(--text);">{{ weeks[0] }}</strong> · {{ weeks|length }}-week rolling horizon</p>
+  </div>
+  <div style="display:flex;gap:.5rem;align-items:center;">
+    <form method="POST" action="{{ url_for('scheduler.auto_plan') }}" style="display:inline;">
+      <input type="hidden" name="from_date" value="{{ weeks[0] }}">
+      <input type="hidden" name="mode" value="deadline">
+      <button type="submit" class="btn btn--primary btn--sm">⚡ Auto-Plan 8 Weeks</button>
+    </form>
+  </div>
+</div>
+
+<!-- Readiness strip -->
+<div class="readiness" id="readiness-strip">
+  <span class="readiness-label">Plan Readiness</span>
+  <div class="readiness-check" data-name="absences">
+    <span class="check-icon">○</span>
+    <span>Absences confirmed</span>
+  </div>
+  <div class="readiness-check" data-name="works_orders">
+    <span class="check-icon">○</span>
+    <span>Works Orders imported</span>
+  </div>
+  <div class="readiness-check" data-name="sales_orders">
+    <span class="check-icon">○</span>
+    <span>Sales Orders imported</span>
+  </div>
+  <a href="{{ url_for('availability.index') }}" class="btn btn--ghost btn--sm" style="margin-left:auto;">Manage Absences</a>
+  <a href="{{ url_for('imports.index') }}" class="btn btn--ghost btn--sm">Import Files</a>
+</div>
+
+<!-- Tabs -->
+<div class="sched-tabs">
+  <button class="sched-tab active" data-pane="plan">📋 Plan This Week</button>
+  <button class="sched-tab" data-pane="gantt">📊 Full 8-Week Gantt</button>
+  <button class="sched-tab" data-pane="issues">⚠ Issues</button>
+</div>
+
+<!-- ============================================================
+     PANE 1: Plan This Week
+     ============================================================ -->
+<div class="pane active" id="pane-plan">
+
+  <!-- IN PROGRESS section -->
+  <div style="margin-bottom: 1.75rem;">
+    <div class="sec-h">
+      <div class="sec-h-title">
+        <span style="color:var(--amber);">●</span>
+        Active this week — In Progress from last week
+        <span class="count" id="active-count">0</span>
+      </div>
+      <span style="font-size:.75rem;color:var(--text-sec);">Tick when finished</span>
+    </div>
+    <div id="active-list">
+      <div class="empty">Loading...</div>
+    </div>
+  </div>
+
+  <!-- TO PLAN section -->
+  <div>
+    <div class="sec-h">
+      <div class="sec-h-title">
+        <span style="color:var(--green);">●</span>
+        To Plan
+        <span class="count" id="toplan-count">0</span>
+      </div>
+    </div>
+
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="search-input"
+             placeholder="Search by job number, part, description or SO...">
+      <button class="search-clear" id="search-clear">×</button>
+    </div>
+
+    <div class="filter-row">
+      <button class="filter-chip active" data-team="">All teams</button>
+      <button class="filter-chip" data-team="General">General</button>
+      <button class="filter-chip" data-team="Davenham">Davenham</button>
+    </div>
+
+    <div id="toplan-list">
+      <div class="empty">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANE 2: Gantt
+     ============================================================ -->
+<div class="pane" id="pane-gantt">
+  <div class="week-picker" id="gantt-wpicker">
+    {% for w in weeks %}
+    <button class="week-btn {% if loop.index0 == 0 %}active{% endif %}" data-week="{{ w }}"
+            onclick="loadGantt(this.dataset.week)">
+      {% if loop.index0 == 0 %}This week{% else %}W/C {{ w[5:] }}{% endif %}
+    </button>
+    {% endfor %}
+  </div>
+  <div class="card" style="padding:1rem 1.25rem;">
+    <div id="gantt-content">
+      <div class="empty">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANE 3: Issues
+     ============================================================ -->
+<div class="pane" id="pane-issues">
+  <div class="card" style="padding:1.25rem;">
+    <p style="color:var(--text-sec);">Late jobs, BOM shortfalls and unscheduled SOs appear here after running the plan.</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     ASSIGN MODAL
+     ============================================================ -->
+<div class="modal-bg" id="assign-modal">
+  <div class="modal">
+    <h3 class="modal-title" id="assign-title">Assign Job</h3>
+    <p class="modal-sub" id="assign-sub"></p>
+
+    <div style="font-family:var(--font-head);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.5rem;">Pick a week</div>
+    <div class="week-picker" id="modal-week-picker">
+      {% for w in weeks %}
+      <button class="week-btn {% if loop.index0 == 0 %}active{% endif %}" data-week="{{ w }}">
+        {% if loop.index0 == 0 %}This week{% else %}W/C {{ w[5:] }}{% endif %}
+      </button>
+      {% endfor %}
+    </div>
+
+    <div style="font-family:var(--font-head);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.5rem;">Pick an operator</div>
+    <div id="modal-operators">
+      <div class="empty">Loading...</div>
+    </div>
+
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn btn--ghost btn--sm" onclick="closeAssign()">Cancel</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ────────────────────────────────────────────────────
+const WEEKS = {{ weeks|tojson }};
+let searchQuery = "";
+let teamFilter  = "";
+let activeJobs  = [];
+let toPlanJobs  = [];
+let assignJob   = null;
+let assignWeek  = WEEKS[0];
+
+// ── Tabs ─────────────────────────────────────────────────────
+document.querySelectorAll(".sched-tab").forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll(".sched-tab").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".pane").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("pane-" + t.dataset.pane).classList.add("active");
+    if (t.dataset.pane === "gantt") {
+      const activeWeek = document.querySelector("#gantt-wpicker .active");
+      loadGantt(activeWeek ? activeWeek.dataset.week : "{{ weeks[0] }}");
+    }
+  };
+});
+
+// ── Readiness ────────────────────────────────────────────────
+fetch("/manager/schedule/readiness").then(r => r.json()).then(d => {
+  ["absences","works_orders","sales_orders"].forEach(k => {
+    const el = document.querySelector(`[data-name="${k}"]`);
+    if (!el) return;
+    if (d[k] && d[k].status === "ok") {
+      el.classList.add("ok");
+      el.querySelector(".check-icon").textContent = "✓";
+    }
+  });
+});
+
+document.querySelectorAll(".readiness-check").forEach(c => {
+  c.onclick = () => {
+    fetch("/manager/schedule/check/" + c.dataset.name, {method:"POST"})
+      .then(r => r.json()).then(() => {
+        c.classList.toggle("ok");
+        c.querySelector(".check-icon").textContent = c.classList.contains("ok") ? "✓" : "○";
+      });
+  };
+});
+
+// ── Load active (In Progress) jobs ───────────────────────────
+function loadActive() {
+  fetch("/manager/schedule/jobs/active-week").then(r => r.json()).then(d => {
+    activeJobs = d.jobs;
+    document.getElementById("active-count").textContent = activeJobs.length;
+    renderActive();
+  });
+}
+
+function renderActive() {
+  const el = document.getElementById("active-list");
+  if (activeJobs.length === 0) {
+    el.innerHTML = '<div class="empty">No jobs were In Progress at last import. They\'ll appear here on Friday.</div>';
+    return;
+  }
+  el.innerHTML = activeJobs.map(j => {
+    const late = j.due_date && j.due_date < new Date().toISOString().slice(0,10);
+    return `
+    <div class="job-card inprog ${late ? 'late' : ''}">
+      <div class="job-card-main">
+        <div class="job-card-head">
+          <span class="job-num">${j.job_number}</span>
+          <span class="badge badge--amber">In Progress</span>
+          ${late ? '<span class="badge badge--red">⚠ Past due</span>' : ''}
+          ${j.emp_name ? `<span class="hours-pill">${j.emp_name} · ${j.hours_this_week}h</span>` : ''}
+        </div>
+        <div class="job-desc">${j.description || j.part_number}</div>
+        <div class="job-meta">
+          <span>Qty: <strong>${j.quantity}</strong></span>
+          <span>Part: <strong>${j.part_number}</strong></span>
+          ${j.due_date ? `<span class="${late?'late':''}">Due ${j.due_date}</span>` : ''}
+          ${j.erp_ref ? `<span style="color:var(--blue);">${j.erp_ref}</span>` : ''}
+          <span>${j.team}</span>
+        </div>
+      </div>
+      <div class="job-actions">
+        <button class="btn btn--primary btn--sm" onclick="markComplete(${j.id})">✓ Complete</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Load to-plan jobs ────────────────────────────────────────
+function loadToPlan() {
+  const params = new URLSearchParams();
+  if (searchQuery) params.set("q", searchQuery);
+  if (teamFilter)  params.set("team", teamFilter);
+  fetch("/manager/schedule/jobs/to-plan?" + params).then(r => r.json()).then(d => {
+    toPlanJobs = d.jobs;
+    document.getElementById("toplan-count").textContent = d.total;
+    renderToPlan();
+  });
+}
+
+function renderToPlan() {
+  const el = document.getElementById("toplan-list");
+  if (toPlanJobs.length === 0) {
+    el.innerHTML = `<div class="empty">${searchQuery ? `No jobs match "${searchQuery}"` : 'No jobs to plan. Run Auto-Plan or wait for next import.'}</div>`;
+    return;
+  }
+  el.innerHTML = toPlanJobs.map(j => {
+    const late = j.due_date && j.due_date < new Date().toISOString().slice(0,10);
+    const cls  = j.manual_locked ? 'locked' : j.status === 'Scheduled' ? 'scheduled' : 'unsched';
+    return `
+    <div class="job-card ${cls} ${late?'late':''}">
+      <div class="job-card-main">
+        <div class="job-card-head">
+          <span class="job-num">${j.job_number}</span>
+          <span class="badge badge--${j.status==='Scheduled'?'green':'neutral'}">${j.status}</span>
+          ${j.manual_locked ? '<span class="badge badge--purple">🔒 Manual</span>' : ''}
+          ${late ? '<span class="badge badge--red">⚠ Late</span>' : ''}
+          <span style="font-size:.7rem;color:var(--text-sec);">${j.team}</span>
+        </div>
+        <div class="job-desc">${j.description || j.part_number}</div>
+        <div class="job-meta">
+          <span>Qty: <strong>${j.quantity}</strong></span>
+          <span>Part: <strong>${j.part_number}</strong></span>
+          ${j.due_date ? `<span class="${late?'late':''}">Due ${j.due_date}</span>` : ''}
+          ${j.erp_ref ? `<span style="color:var(--blue);">${j.erp_ref}</span>` : ''}
+          ${j.sale_value ? `<span>£${parseFloat(j.sale_value).toFixed(0)}</span>` : ''}
+        </div>
+      </div>
+      <div class="job-actions">
+        <button class="btn btn--primary btn--sm" onclick='openAssign(${JSON.stringify(j)})'>+ Assign</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Search ───────────────────────────────────────────────────
+let searchTimer = null;
+document.getElementById("search-input").oninput = e => {
+  searchQuery = e.target.value;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadToPlan, 250);
+};
+document.getElementById("search-clear").onclick = () => {
+  document.getElementById("search-input").value = "";
+  searchQuery = "";
+  loadToPlan();
+};
+document.querySelectorAll(".filter-chip").forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll(".filter-chip").forEach(x => x.classList.remove("active"));
+    c.classList.add("active");
+    teamFilter = c.dataset.team;
+    loadToPlan();
+  };
+});
+
+// ── Mark complete ────────────────────────────────────────────
+function markComplete(jobId) {
+  if (!confirm("Mark this job as complete?")) return;
+  fetch(`/manager/schedule/jobs/${jobId}/complete`, {method:"POST"})
+    .then(r => r.json()).then(d => {
+      if (d.ok) { loadActive(); loadToPlan(); }
+      else alert("Error: " + (d.error || "unknown"));
+    });
+}
+
+// ── Assign modal ─────────────────────────────────────────────
+function openAssign(job) {
+  assignJob = job;
+  document.getElementById("assign-title").textContent = `Assign ${job.job_number}`;
+  document.getElementById("assign-sub").textContent =
+    `${job.description || job.part_number} · Qty: ${job.quantity} · ${job.team} team`;
+
+  // Set first week active
+  document.querySelectorAll("#modal-week-picker .week-btn").forEach((b,i) => {
+    b.classList.toggle("active", i===0);
+    b.onclick = () => {
+      document.querySelectorAll("#modal-week-picker .week-btn").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      assignWeek = b.dataset.week;
+      loadOperators();
+    };
+  });
+  assignWeek = WEEKS[0];
+
+  document.getElementById("assign-modal").classList.add("open");
+  loadOperators();
+}
+
+function closeAssign() {
+  document.getElementById("assign-modal").classList.remove("open");
+  assignJob = null;
+}
+
+function loadOperators() {
+  const el = document.getElementById("modal-operators");
+  el.innerHTML = '<div class="empty">Loading...</div>';
+  fetch(`/manager/schedule/week-operators?week=${assignWeek}`).then(r => r.json()).then(d => {
+    const eligible = d.operators.filter(o => o.team === assignJob.team);
+    if (eligible.length === 0) {
+      el.innerHTML = '<div class="empty">No operators on this team.</div>';
+      return;
+    }
+    el.innerHTML = eligible.map(o => {
+      const hClass = o.hours_booked >= 40 ? 'over' : o.hours_booked >= 35 ? 'full' : '';
+      return `
+      <div class="op-option" onclick="doAssign(${o.id})">
+        <div>
+          <div class="op-option-name">${o.name}</div>
+          <div class="op-option-meta">${o.grade} · ${o.jobs.length} jobs assigned</div>
+        </div>
+        <div class="op-option-hours ${hClass}">${o.hours_booked}h / 40h</div>
+      </div>`;
+    }).join("");
+  });
+}
+
+function doAssign(empId) {
+  fetch(`/manager/schedule/jobs/${assignJob.id}/assign`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({emp_id: empId, week_start: assignWeek})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      closeAssign();
+      loadToPlan();
+      loadActive();
+    } else {
+      alert("Error: " + (d.error || "unknown"));
+    }
+  });
+}
+
+// Close modal on background click
+document.getElementById("assign-modal").onclick = e => {
+  if (e.target.id === "assign-modal") closeAssign();
+};
+
+// ── Gantt ────────────────────────────────────────────────────
+function loadGantt(week) {
+  document.querySelectorAll("#gantt-wpicker .week-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.week === week);
+  });
+  const el = document.getElementById("gantt-content");
+  el.innerHTML = '<div class="empty">Loading...</div>';
+  fetch(`/manager/schedule/week-operators?week=${week}`).then(r => r.json()).then(d => {
+    if (d.operators.every(o => o.jobs.length === 0)) {
+      el.innerHTML = '<div class="empty">Nothing scheduled for this week. Run Auto-Plan or assign manually.</div>';
+      return;
+    }
+    const today = new Date().toISOString().slice(0,10);
+    el.innerHTML = ['General','Davenham'].map(team => {
+      const ops = d.operators.filter(o => o.team === team);
+      if (ops.every(o => o.jobs.length === 0)) return '';
+      const teamColor = team==='Davenham' ? 'var(--purple)' : 'var(--text-sec)';
+      return '<div class="section-label" style="margin:.85rem 0 .5rem;color:' + teamColor + ';">' + team + ' team</div>' +
+        ops.filter(o => o.jobs.length > 0).map(o => `
+          <div class="gantt-row">
+            <div class="gantt-name">${o.name.split(' ')[0]}<small>${o.hours_booked}h / 40h</small></div>
+            <div class="gantt-bar-track">
+              ${o.jobs.map(j => {
+                const late = j.due_date && j.due_date < today;
+                const cls  = late ? 'late' : j.auto_planned === 0 ? 'locked' : j.status === 'In Progress' ? 'inprog' : 'scheduled';
+                const w    = Math.max(6, Math.round(j.hours/40*100));
+                const lbl  = w >= 15 ? (j.job_number + ' (' + j.hours + 'h)') : (w >= 8 ? j.job_number.slice(-6) : '');
+                const tip  = j.job_number + ' — ' + (j.description||j.part_number||'') + ' (' + j.hours + 'h' + (j.due_date ? ', due '+j.due_date : '') + ')';
+                return '<div class="gantt-bar ' + cls + '" style="width:' + w + '%;" title="' + tip + '">' + lbl + '</div>';
+              }).join('')}
+            </div>
+          </div>`).join('');
+    }).join('');
+  });
+}
+
+// ── Init ─────────────────────────────────────────────────────
+loadActive();
+loadToPlan();
+</script>
+{% endblock %}

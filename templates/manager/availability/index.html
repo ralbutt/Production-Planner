@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Availability & Holidays{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Availability & Holidays</h1>
+    <p class="page-sub">Bank holidays · Absences · Weekend working</p>
+  </div>
+  <div style="display:flex;gap:.5rem;align-items:center;">
+    <a href="{{ url_for('availability.index', year=prev_year) }}" class="btn btn--ghost btn--sm">‹ {{ prev_year }}</a>
+    <span style="font-family:var(--font-head);font-weight:700;font-size:1.1rem;color:var(--text);padding:0 .5rem;">{{ year }}</span>
+    <a href="{{ url_for('availability.index', year=next_year) }}" class="btn btn--ghost btn--sm">{{ next_year }} ›</a>
+  </div>
+</div>
+
+{% for cat, msg in get_flashed_messages(with_categories=true) %}
+<div class="alert alert--{{ 'success' if cat=='success' else 'error' }}">{{ msg }}</div>
+{% endfor %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+
+  <!-- ── Bank Holidays ─────────────────────────────────────── -->
+  <div>
+    <h2 style="font-family:var(--font-head);font-size:.9rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.75rem;">
+      Bank Holidays (England &amp; Wales)
+    </h2>
+
+    <!-- Add form -->
+    <div class="card" style="padding:1rem 1.25rem;margin-bottom:.75rem;">
+      <form method="POST" action="{{ url_for('availability.add_bank_holiday') }}" style="display:flex;gap:.6rem;align-items:flex-end;flex-wrap:wrap;">
+        <div style="flex:0 0 150px;">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" name="date" required>
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <label class="form-label">Name</label>
+          <input class="form-input" type="text" name="name" placeholder="e.g. Christmas Day" required>
+        </div>
+        <button type="submit" class="btn btn--primary btn--sm">Add</button>
+      </form>
+    </div>
+
+    <!-- List -->
+    <div class="card" style="padding:0;">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Holiday</th><th>Source</th><th></th></tr></thead>
+        <tbody>
+          {% for bh in bank_holidays %}
+          <tr>
+            <td style="font-family:var(--font-head);font-weight:700;font-size:.85rem;">{{ bh.date }}</td>
+            <td class="text-sec">{{ bh.name }}</td>
+            <td><span class="badge {% if bh.auto_loaded %}badge--neutral{% else %}badge--green{% endif %}">{{ 'Auto' if bh.auto_loaded else 'Manual' }}</span></td>
+            <td class="row-actions">
+              <form method="POST" action="{{ url_for('availability.delete_bank_holiday', bh_id=bh.id) }}">
+                <button type="submit" class="btn btn--ghost btn--sm"
+                  onclick="return confirm('Remove {{ bh.name }}?')">Remove</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-sec);">No bank holidays for {{ year }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Weekend Working & Absences ────────────────────────── -->
+  <div>
+
+    <!-- Weekend working -->
+    <h2 style="font-family:var(--font-head);font-size:.9rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.75rem;">
+      Weekend Working
+    </h2>
+    <div class="card" style="padding:1rem 1.25rem;margin-bottom:.75rem;">
+      <form method="POST" action="{{ url_for('availability.add_weekend_working') }}" style="display:flex;gap:.6rem;align-items:flex-end;flex-wrap:wrap;">
+        <div style="flex:1;min-width:160px;">
+          <label class="form-label">Operator</label>
+          <select class="form-input" name="employee_id" required>
+            <option value="">— Select —</option>
+            {% for emp in employees %}
+            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.team }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="flex:0 0 150px;">
+          <label class="form-label">Date (Sat or Sun)</label>
+          <input class="form-input" type="date" name="date" required>
+        </div>
+        <button type="submit" class="btn btn--primary btn--sm">Add</button>
+      </form>
+    </div>
+    <div class="card" style="padding:0;margin-bottom:1.5rem;">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Operator</th><th></th></tr></thead>
+        <tbody>
+          {% for ww in weekend_working %}
+          <tr>
+            <td style="font-family:var(--font-head);font-weight:700;font-size:.85rem;color:var(--green);">{{ ww.date }}</td>
+            <td class="text-sec">{{ ww.emp_name }}</td>
+            <td class="row-actions">
+              <form method="POST" action="{{ url_for('availability.delete_weekend_working', entry_id=ww.id) }}">
+                <button type="submit" class="btn btn--ghost btn--sm">Remove</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-sec);">No weekend working recorded for {{ year }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Absences -->
+    <h2 style="font-family:var(--font-head);font-size:.9rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.75rem;">
+      Absences
+    </h2>
+    <div class="card" style="padding:1rem 1.25rem;margin-bottom:.75rem;">
+      <form method="POST" action="{{ url_for('availability.add_absence') }}" style="display:flex;gap:.6rem;align-items:flex-end;flex-wrap:wrap;">
+        <div style="flex:1;min-width:160px;">
+          <label class="form-label">Operator</label>
+          <select class="form-input" name="employee_id" required>
+            <option value="">— Select —</option>
+            {% for emp in employees %}
+            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.team }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="flex:0 0 150px;">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" name="date" required>
+        </div>
+        <div style="flex:1;min-width:120px;">
+          <label class="form-label">Reason (optional)</label>
+          <input class="form-input" type="text" name="reason" placeholder="Holiday, sick...">
+        </div>
+        <button type="submit" class="btn btn--primary btn--sm">Add</button>
+      </form>
+    </div>
+    <div class="card" style="padding:0;">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Operator</th><th>Reason</th><th></th></tr></thead>
+        <tbody>
+          {% for ab in absences %}
+          <tr>
+            <td style="font-family:var(--font-head);font-weight:700;font-size:.85rem;color:var(--amber);">{{ ab.date }}</td>
+            <td class="text-sec">{{ ab.emp_name }}</td>
+            <td class="text-sec">{{ ab.reason or '—' }}</td>
+            <td class="row-actions">
+              <form method="POST" action="{{ url_for('availability.delete_absence', entry_id=ab.id) }}">
+                <button type="submit" class="btn btn--ghost btn--sm">Remove</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-sec);">No absences recorded for {{ year }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

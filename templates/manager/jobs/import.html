@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Import from Emax{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Import from Emax</h1><p class="page-sub">Upload a Sales Delivery Lines or Works Orders export</p></div>
+  <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn--ghost">← Jobs</a>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem; max-width:840px;">
+
+  <div class="card" style="padding:1.25rem 1.5rem;">
+    <div style="font-family:var(--font-head);font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--green);margin-bottom:.6rem;">
+      Sales Delivery Lines
+    </div>
+    <p style="font-size:.82rem;color:var(--text-sec);line-height:1.6;">
+      Sales → Delivery Lines → Outstanding, filter by date range.<br>
+      Imports: Sales Order → Job No. · Project → EAS · ItemCode → Part · Date Required → Due Date · Qty Outstanding · Sub Total → Value · Customer PO
+    </p>
+  </div>
+
+  <div class="card" style="padding:1.25rem 1.5rem;">
+    <div style="font-family:var(--font-head);font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--green);margin-bottom:.6rem;">
+      Works Orders
+    </div>
+    <p style="font-size:.82rem;color:var(--text-sec);line-height:1.6;">
+      Works Orders → Current Works Orders export.<br>
+      Imports: Transaction No → Job No. · Project → EAS · Item → Part · Outstanding → Qty · Delivery Date · CustomerSupplier · Sales Order ref. Stock Build projects flagged automatically.
+    </p>
+  </div>
+
+</div>
+
+<div class="form-card" style="max-width:520px;">
+  <p style="font-size:.875rem;color:var(--text-sec);margin-bottom:1.25rem;">
+    The format is detected automatically from the file's column headers. No configuration needed.
+  </p>
+  <form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+      <label class="form-label">Emax Export File</label>
+      <input class="form-input" type="file" name="file" accept=".xlsx,.xls,.csv" required />
+      <p class="form-hint">Accepts .xlsx, .xls or .csv. Both export formats supported.</p>
+    </div>
+    <div class="form-footer" style="padding-top:1rem;">
+      <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn--ghost">Cancel</a>
+      <button type="submit" class="btn btn--primary">Import Jobs</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

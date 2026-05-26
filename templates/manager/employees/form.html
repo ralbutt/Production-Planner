@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if mode == 'edit' else 'Add' }} Employee{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ 'Edit Employee' if mode == 'edit' else 'Add Employee' }}</h1>
+    {% if mode == 'edit' %}
+      <p class="page-sub">Updating {{ emp.name }}</p>
+    {% endif %}
+  </div>
+  <a href="{{ url_for('employees.list_employees') }}" class="btn btn--ghost">← Back</a>
+</div>
+
+<div class="form-card">
+  {% if errors %}
+    {% for err in errors %}
+      <div class="form-error">{{ err }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="name">Full Name</label>
+        <input class="form-input" type="text" id="name" name="name"
+               value="{{ form.name if form.name else (emp.name if mode == 'edit' else '') }}"
+               required placeholder="First and last name" autofocus />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="department">Department</label>
+        <select class="form-input" id="department" name="department">
+          {% for dept in ['Wiring', 'Mechanical', 'Testing', 'Other'] %}
+            <option value="{{ dept }}"
+              {% if (form.department if form.department else (emp.department if mode == 'edit' else '')) == dept %}selected{% endif %}>
+              {{ dept }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group" style="max-width:240px;">
+        <label class="form-label" for="tier_id">Grade</label>
+        <select class="form-input" id="tier_id" name="tier_id" required>
+          <option value="">— Select grade —</option>
+          {% for tier in tiers %}
+            <option value="{{ tier.id }}"
+              {% set cur = form.tier_id if form.tier_id else (emp.tier_id | string if mode == 'edit' else '') %}
+              {% if cur == tier.id | string %}selected{% endif %}>
+              {{ tier.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="max-width:240px;">
+        <label class="form-label" for="team">Team</label>
+        <select class="form-input" id="team" name="team">
+          {% for t in teams %}
+            <option value="{{ t }}"
+              {% set cur_team = form.team if form.team else (emp.team if mode == 'edit' else 'General') %}
+              {% if cur_team == t %}selected{% endif %}>
+              {{ t }}
+            </option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">
+          Davenham team members are only assigned to Davenham jobs. General can be assigned to any other job. Managers can override either way.
+        </p>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <a href="{{ url_for('employees.list_employees') }}" class="btn btn--ghost">Cancel</a>
+      <button type="submit" class="btn btn--primary">
+        {{ 'Save Changes' if mode == 'edit' else 'Add Employee' }}
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

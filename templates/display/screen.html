@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rapid Assembly – Production Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#000;--card:#0d1a2e;--card2:#0a1220;--border:#1a3055;--border2:#1f3a60;
+      --green:#5de08a;--amber:#FF9800;--red:#f44336;--text:#cfe0f5;--text2:#5a7a9a;--purple:#a78bfa}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Barlow',sans-serif;color:var(--text)}
+
+/* ── Header ── */
+#hdr{position:fixed;top:0;left:0;right:0;height:58px;z-index:999;background:#000;
+     border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 18px;gap:14px}
+.hd{width:1px;height:32px;background:var(--border2)}
+#hi{display:flex;flex-direction:column;gap:1px}
+#hi-date{font-size:12px;font-weight:600;color:var(--text2)}
+#hi-week{font-size:9px;color:var(--green);letter-spacing:1.5px;text-transform:uppercase}
+#logo-mark{width:34px;height:34px;background:var(--green);border-radius:5px;
+           display:flex;align-items:center;justify-content:center;
+           font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.9rem;color:#000;flex-shrink:0}
+#title-text{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;
+            letter-spacing:.09em;text-transform:uppercase;color:var(--text)}
+#vt{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;
+    font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green)}
+#nav{display:flex;align-items:center;gap:7px}
+.nb{width:32px;height:32px;border-radius:5px;border:1px solid var(--border2);background:var(--card);
+    color:var(--text2);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;
+    transition:all .15s;user-select:none}
+.nb:hover{background:var(--card2);border-color:var(--green);color:var(--green)}
+#dots{display:flex;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border2);cursor:pointer;transition:all .2s}
+.dot.on{background:var(--green);box-shadow:0 0 7px rgba(93,224,138,.7)}
+#clk{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:700;
+     letter-spacing:2px;min-width:88px;text-align:right;color:var(--text)}
+#pb-wrap{position:fixed;bottom:0;left:0;right:0;height:4px;background:#0a1220;z-index:999}
+#pb{height:4px;background:var(--green);width:0%;box-shadow:0 0 8px rgba(93,224,138,.5);transition:width .1s linear}
+
+/* ── Shared ── */
+.view{position:fixed;top:58px;left:0;right:0;bottom:4px;opacity:0;
+      transition:opacity .4s;pointer-events:none;overflow:hidden}
+.view.on{opacity:1;pointer-events:all}
+.sc{height:100%;overflow-y:auto;padding:14px 18px}
+.sc::-webkit-scrollbar{width:3px}
+.sc::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;
+       font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+       font-family:'Barlow Condensed',sans-serif;white-space:nowrap}
+.bplan{background:rgba(93,224,138,.1);color:var(--green);border:1px solid rgba(93,224,138,.3)}
+.bprog{background:rgba(255,152,0,.12);color:var(--amber);border:1px solid rgba(255,152,0,.35)}
+.blate{background:rgba(244,67,54,.15);color:var(--red);border:1px solid rgba(244,67,54,.4)}
+.sh{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;
+    text-transform:uppercase;color:var(--text2);margin:10px 0 7px;padding-left:10px;
+    border-left:3px solid var(--green)}
+.sh.dav{border-color:var(--purple);color:var(--purple)}
+
+/* ── View 0: Team Plan (job cards) ── */
+.jg{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:8px;margin-bottom:6px}
+.jc{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:9px 12px;border-left:3px solid var(--border)}
+.jc.plan{border-left-color:var(--green)}.jc.prog{border-left-color:var(--amber)}
+.jc.late{border-left-color:var(--red);background:rgba(244,67,54,.03)}
+.jt{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px}
+.jpn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--green)}
+.jdesc{font-size:11.5px;color:var(--text);margin-bottom:4px;line-height:1.3}
+.jm{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:5px}
+.jmi{font-size:10px;color:var(--text2)}.jmi b{color:var(--text)}
+.jop{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:#fff}
+.cap{margin-top:10px;padding:10px 14px;background:var(--card);border:1px solid var(--border);
+     border-radius:6px;display:flex;gap:20px;align-items:center}
+.cs{display:flex;flex-direction:column;gap:1px}
+.cl{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.cv{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700}
+.ct{flex:1}.cbt{height:5px;background:var(--border);border-radius:3px;margin-top:4px}
+.cbf{height:100%;border-radius:3px;background:var(--green)}.cp{font-size:10px;color:var(--green);margin-top:2px}
+
+/* ── View 1: Operator cards ── */
+.og{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:9px}
+.oc{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:11px}
+.on2{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#fff;
+     margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border2)}
+.oj{margin-bottom:5px;padding:6px 8px;background:#080f1c;border-radius:4px;border-left:2px solid var(--border)}
+.oj.plan{border-left-color:var(--green)}.oj.prog{border-left-color:var(--amber)}
+.oj.late{border-left-color:var(--red);background:rgba(244,67,54,.04)}
+.ojpn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--green)}
+.ojd{font-size:9.5px;color:var(--text2);margin:2px 0;line-height:1.3}
+.ojb{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:2px}
+.ojf{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.ojrow{display:flex;justify-content:space-between;align-items:center;font-size:9.5px;padding:3px 7px;border-radius:3px;gap:5px}
+.ojrow.rem{background:rgba(255,152,0,.07);border:1px solid rgba(255,152,0,.18);color:var(--amber)}
+.ojrow.rem b{color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:11.5px}
+.ojrow.rem.late{background:rgba(244,67,54,.07);border-color:rgba(244,67,54,.25);color:var(--red)}
+.ojrow.rem.late b{color:#ff8a80}
+.ojrow.build{background:rgba(93,224,138,.05);border:1px solid rgba(93,224,138,.15);color:var(--green)}
+.ojrow.build b{color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:11.5px}
+.ojrow.fin{font-size:9px;color:var(--text2);padding:2px 0}
+.ojrow.fin b{color:var(--green)}.ojrow.fin.late b{color:var(--red)}
+
+/* ── View 2: Gantt ── */
+.gw{height:100%;display:flex;flex-direction:column;padding:0 18px 6px}
+.gh{display:flex;flex-shrink:0;background:#000;border-bottom:2px solid var(--border2)}
+.glc{width:210px;flex-shrink:0;padding:4px 10px;display:flex;flex-direction:column;justify-content:flex-end}
+.glc span{font-size:8px;color:var(--text2);letter-spacing:1px;text-transform:uppercase}
+.gdw{flex:1;display:flex;flex-direction:column}
+.gdr{display:flex;flex:1}.gd{flex:1;text-align:center;padding:2px 0;border-left:1px solid var(--border);
+     font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700}
+.gd.td{background:rgba(93,224,138,.07);color:var(--green)}.gd:not(.td){color:var(--text2)}
+.ghr{display:flex;flex:1}.ghg{flex:1;display:flex;border-left:1px solid var(--border)}
+.ghh{flex:1;border-left:1px solid rgba(26,48,85,.5);font-size:7.5px;color:rgba(90,122,154,.3);text-align:center;padding:1px 0}
+.gb2{flex:1;overflow-y:auto}.gb2::-webkit-scrollbar{width:3px}.gb2::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.gs{display:flex;min-height:24px;background:rgba(93,224,138,.05);border-bottom:1px solid var(--border)}
+.gsl{width:210px;flex-shrink:0;padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+     color:var(--green);border-right:1px solid var(--border);display:flex;align-items:center}
+.gsl.dav{color:var(--purple)}
+.gsr{flex:1}
+.gr{display:flex;align-items:stretch;min-height:40px;border-bottom:1px solid rgba(26,48,85,.35)}
+.grl{width:210px;flex-shrink:0;padding:4px 10px;display:flex;flex-direction:column;justify-content:center;gap:1px;
+     border-right:1px solid var(--border);background:var(--card)}
+.grl.late-row{background:rgba(244,67,54,.05)}
+.grl .gpn{font-family:'Barlow Condensed',sans-serif;font-size:11.5px;font-weight:700;color:var(--green)}
+.grl .grd{font-size:8.5px;color:var(--text2);line-height:1.2}
+.grl .grr{font-size:8.5px;font-weight:700}
+.grl .grr.late{color:var(--red)}.grl .grr.prog{color:var(--amber)}.grl .grr.plan{color:var(--green)}
+.grl .grf{font-size:8px;color:var(--text2)}.grl .grf b{color:var(--green)}.grl .grf.late b{color:var(--red)}
+.gtl{flex:1;position:relative;display:flex}
+.gc{flex:1;border-left:1px solid rgba(26,48,85,.3);position:relative}
+.gc.td{background:rgba(93,224,138,.04)}
+.gc.td::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(93,224,138,.3);transform:translateX(-50%)}
+.gbar{position:absolute;top:4px;bottom:4px;border-radius:3px;display:flex;align-items:center;padding:0 5px;
+      font-size:9px;font-weight:700;white-space:nowrap;overflow:hidden;font-family:'Barlow Condensed',sans-serif}
+.gbar.plan{background:rgba(93,224,138,.22);border:1px solid rgba(93,224,138,.45);color:rgba(180,255,210,.9)}
+.gbar.prog{background:rgba(255,152,0,.25);border:1px solid rgba(255,152,0,.5);color:rgba(255,230,200,.9)}
+.gbar.late{background:rgba(244,67,54,.28);border:1px solid rgba(244,67,54,.6);color:rgba(255,180,180,.95);
+           animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div id="logo-mark">RA</div>
+  <span id="title-text">Rapid Assembly</span>
+  <div class="hd"></div>
+  <div id="hi">
+    <div id="hi-date"></div>
+    <div id="hi-week">Loading…</div>
+  </div>
+  <div id="vt">Team Plan for the Day</div>
+  <div id="nav">
+    <div class="nb" id="prev">&#8249;</div>
+    <div id="dots">
+      <div class="dot on" data-i="0"></div>
+      <div class="dot" data-i="1"></div>
+      <div class="dot" data-i="2"></div>
+    </div>
+    <div class="nb" id="next">&#8250;</div>
+  </div>
+  <div id="clk"></div>
+</div>
+
+<!-- View 0: Job cards -->
+<div class="view on" id="v0"><div class="sc" id="v0c"></div></div>
+<!-- View 1: Operator cards -->
+<div class="view" id="v1"><div class="sc" id="v1c"></div></div>
+<!-- View 2: Gantt -->
+<div class="view" id="v2">
+  <div class="gw">
+    <div class="gh" id="ghdr"></div>
+    <div class="gb2"><div id="gbdy"></div></div>
+  </div>
+</div>
+
+<div id="pb-wrap"><div id="pb"></div></div>
+
+<script>
+// ── Data ────────────────────────────────────────────────────
+var PLAN = null;
+var DAYS_OF_WEEK = ['Mon','Tue','Wed','Thu','Fri'];
+var NDAYS = 5, NHOURS = 8, TCELLS = NDAYS * NHOURS;
+
+function loadData(){
+  fetch('/display/data').then(function(r){return r.json();}).then(function(d){
+    PLAN = d;
+    document.getElementById('hi-week').textContent = 'W/C ' + d.week_start;
+    buildViews();
+  }).catch(function(e){console.error('Data load failed',e);});
+}
+
+// ── Helpers ─────────────────────────────────────────────────
+function isLate(job){ return job.due_date && job.due_date < PLAN.today; }
+function cls(job){ return isLate(job)?'late': job.status==='In Progress'?'prog':'plan'; }
+function badgeCls(job){ return isLate(job)?'blate': job.status==='In Progress'?'bprog':'bplan'; }
+function badgeLbl(job){ return isLate(job)?'⚠ Late': job.status==='In Progress'?'In Progress':'Planned'; }
+function fmtDue(d){ if(!d) return null; var p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0].slice(2); }
+function hrsRemaining(job){
+  // For this week: total assigned hours minus hours already elapsed today
+  var now = new Date();
+  var dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...5=Fri
+  if(dayOfWeek===0||dayOfWeek===6) return job.hours;
+  var weekdayIdx = dayOfWeek - 1; // 0=Mon
+  var hrNow = now.getHours() + now.getMinutes()/60;
+  // Hours elapsed today (working hours 8-16, so slot 1=08:00, slot 8=15:00..16:00)
+  var hrsElapsedToday = Math.max(0, Math.min(8, hrNow - 8));
+  // Slots elapsed = days before today × 8 + today's elapsed
+  var slotsElapsed = weekdayIdx * 8 + hrsElapsedToday;
+  // Remaining hours in week = total - elapsed (but min 0)
+  var hrsThisWeek = job.hours || 0;
+  return Math.max(0, hrsThisWeek - Math.min(slotsElapsed, hrsThisWeek));
+}
+function fmtRem(hrs){
+  if(hrs<=0) return 'Done today';
+  var h=Math.floor(hrs), m=Math.round((hrs-h)*60);
+  return h+'h'+(m?m+'m':'');
+}
+
+// ── View 0: Job cards ────────────────────────────────────────
+function buildV0(){
+  if(!PLAN) return;
+  var el = document.getElementById('v0c'); el.innerHTML='';
+  var allJobs=[], totalHrs=0, totalCap=0, lateCount=0;
+
+  // Capacity strip
+  PLAN.this_week.forEach(function(op){
+    op.jobs.forEach(function(j){ totalHrs+=j.hours; allJobs.push({...j,_op:op.name,_team:op.team}); });
+    totalCap+=40;
+  });
+  lateCount=allJobs.filter(function(j){return isLate(j);}).length;
+  var pct=Math.round(totalHrs/totalCap*100);
+
+  var cap=document.createElement('div'); cap.className='cap';
+  cap.innerHTML='<div class="cs"><div class="cl">Capacity Used</div>'
+    +'<div class="cv" style="color:'+(pct>80?'var(--green)':pct>50?'var(--amber)':'var(--red)')+'">'+pct+'%</div></div>'
+    +'<div class="ct"><div class="cbt"><div class="cbf" style="width:'+pct+'%"></div></div>'
+    +'<div class="cp">'+totalHrs+'h / '+totalCap+'h this week</div></div>'
+    +'<div class="cs"><div class="cl">Jobs Scheduled</div><div class="cv" style="color:var(--green)">'+allJobs.length+'</div></div>'
+    +(lateCount?'<div class="cs"><div class="cl">Overdue</div><div class="cv" style="color:var(--red)">'+lateCount+'</div></div>':'');
+  el.appendChild(cap);
+
+  // General team
+  var genJobs=allJobs.filter(function(j){return j._team==='General';});
+  var davJobs=allJobs.filter(function(j){return j._team==='Davenham';});
+  [['General Team', genJobs, ''], ['Davenham Team', davJobs, 'dav']].forEach(function(pair){
+    var label=pair[0], jobs=pair[1], davClass=pair[2];
+    if(!jobs.length) return;
+    var sh=document.createElement('div'); sh.className='sh '+davClass; sh.textContent=label; el.appendChild(sh);
+    var grid=document.createElement('div'); grid.className='jg';
+    jobs.sort(function(a,b){
+      if(isLate(a)&&!isLate(b))return -1; if(!isLate(a)&&isLate(b))return 1;
+      return (a.due_date||'9999')<(b.due_date||'9999')?-1:1;
+    }).forEach(function(j){
+      var late=isLate(j), c=cls(j);
+      var card=document.createElement('div'); card.className='jc '+c;
+      var rem=j.status==='In Progress'?hrsRemaining(j):null;
+      card.innerHTML='<div class="jt">'
+        +'<div><div class="jpn">'+j.job_number+'</div><div class="jdesc">'+j.description+'</div></div>'
+        +'<span class="badge '+badgeCls(j)+'">'+badgeLbl(j)+'</span>'
+        +'</div>'
+        +'<div class="jm">'
+        +'<span class="jmi">Qty: <b>'+j.quantity+'</b></span>'
+        +(j.due_date?'<span class="jmi">Due: <b style="color:'+(late?'var(--red)':'inherit')+'">'+fmtDue(j.due_date)+'</b></span>':'')
+        +'<span class="jmi">'+j.hours+'h this week</span>'
+        +(j.so_ref&&j.so_ref!='STOCK'?'<span class="jmi" style="color:var(--blue)">'+j.so_ref+'</span>':'')
+        +'</div>'
+        +'<div class="jop">'+j._op+'</div>'
+        +(rem!==null
+          ?'<div class="ojrow rem '+(late?'late':'')+'" style="margin-top:5px">'
+            +'<span>'+(late?'Overdue — ':'Remaining today: ')+'</span>'
+            +'<b data-rem="'+j.job_number+':'+j._op+'">'+fmtRem(rem)+'</b></div>'
+          :'');
+      grid.appendChild(card);
+    });
+    el.appendChild(grid);
+  });
+}
+
+// ── View 1: Operator cards ────────────────────────────────────
+function buildV1(){
+  if(!PLAN) return;
+  var el=document.getElementById('v1c'); el.innerHTML='';
+  var gen=PLAN.this_week.filter(function(o){return o.team==='General';});
+  var dav=PLAN.this_week.filter(function(o){return o.team==='Davenham';});
+
+  [['General Team', gen, ''], ['Davenham Team', dav, 'dav']].forEach(function(pair){
+    var label=pair[0], ops=pair[1], davClass=pair[2];
+    if(!ops.length) return;
+    var sh=document.createElement('div'); sh.className='sh '+davClass; sh.textContent=label; el.appendChild(sh);
+    var grid=document.createElement('div'); grid.className='og';
+    ops.forEach(function(op){
+      if(!op.jobs.length) return;
+      var card=document.createElement('div'); card.className='oc';
+      var totalHrs=op.jobs.reduce(function(s,j){return s+j.hours;},0);
+      var pct=Math.round(totalHrs/40*100);
+      card.innerHTML='<div class="on2">'+op.name
+        +' <span style="font-size:11px;color:var(--text2);font-weight:400;">'+totalHrs+'h / 40h ('+pct+'%)</span></div>';
+      op.jobs.sort(function(a,b){
+        if(isLate(a)&&!isLate(b))return -1;if(!isLate(a)&&isLate(b))return 1;
+        return (a.due_date||'9999')<(b.due_date||'9999')?-1:1;
+      }).forEach(function(j){
+        var late=isLate(j), c=cls(j), rem=j.status==='In Progress'?hrsRemaining(j):null;
+        var d=document.createElement('div'); d.className='oj '+c;
+        var rr='';
+        if(rem!==null) rr='<div class="ojrow rem '+(late?'late':'')+'">'
+          +'<span>'+(late?'Overdue':'Remaining today')+'</span>'
+          +'<b data-rem="'+j.job_number+':'+op.name+'">'+fmtRem(rem)+'</b></div>';
+        rr+='<div class="ojrow build"><span>Build this week</span><b>'+j.hours+'h</b></div>';
+        if(j.due_date) rr+='<div class="ojrow fin '+(late?'late':'')+'">'
+          +'<span>'+(late?'Was due':'Due')+'</span><b>'+fmtDue(j.due_date)+'</b></div>';
+        d.innerHTML='<div class="ojb"><div class="ojpn">'+j.job_number+'</div>'
+          +'<span class="badge '+badgeCls(j)+'">'+badgeLbl(j)+'</span></div>'
+          +'<div class="ojd">'+j.description+'</div>'
+          +'<div class="ojf">'+rr+'</div>';
+        card.appendChild(d);
+      });
+      grid.appendChild(card);
+    });
+    el.appendChild(grid);
+  });
+}
+
+// ── View 2: Gantt ────────────────────────────────────────────
+function buildV2(){
+  if(!PLAN) return;
+
+  // Build day headers
+  var hdr=document.getElementById('ghdr'); hdr.innerHTML='';
+  var lc=document.createElement('div'); lc.className='glc';
+  lc.innerHTML='<span>Job / Operator</span>'; hdr.appendChild(lc);
+  var dw=document.createElement('div'); dw.className='gdw';
+  var dr=document.createElement('div'); dr.className='gdr';
+  var hr=document.createElement('div'); hr.className='ghr';
+  var today=PLAN.today;
+  var todayDow = new Date(today+'T12:00:00Z').getUTCDay(); // 1=Mon..5=Fri
+  DAYS_OF_WEEK.forEach(function(day, di){
+    var isToday = (di+1===todayDow);
+    var dd=document.createElement('div'); dd.className='gd'+(isToday?' td':'');
+    dd.textContent=day; dr.appendChild(dd);
+    var hg=document.createElement('div'); hg.className='ghg';
+    for(var h=1;h<=NHOURS;h++){var hh=document.createElement('div');hh.className='ghh';hh.textContent='H'+h;hg.appendChild(hh);}
+    hr.appendChild(hg);
+  });
+  dw.appendChild(dr); dw.appendChild(hr); hdr.appendChild(dw);
+
+  // Build rows
+  var bdy=document.getElementById('gbdy'); bdy.innerHTML='';
+  var gen=PLAN.this_week.filter(function(o){return o.team==='General';});
+  var dav=PLAN.this_week.filter(function(o){return o.team==='Davenham';});
+
+  [['General', gen, ''], ['Davenham', dav, 'dav']].forEach(function(pair){
+    var team=pair[0], ops=pair[1], davClass=pair[2];
+    if(!ops.length) return;
+    var sec=document.createElement('div'); sec.className='gs';
+    var sl=document.createElement('div'); sl.className='gsl '+davClass;
+    sl.textContent=team+' Team'; sec.appendChild(sl);
+    bdy.appendChild(sec);
+
+    ops.forEach(function(op){
+      if(!op.jobs.length) return;
+      // Sort jobs by first slot
+      var jobs=[].concat(op.jobs).sort(function(a,b){
+        return (a.due_date||'9999')<(b.due_date||'9999')?-1:1;
+      });
+      jobs.forEach(function(j){
+        var late=isLate(j), c=cls(j);
+        var rem=j.status==='In Progress'?hrsRemaining(j):null;
+        var row=document.createElement('div'); row.className='gr';
+
+        // Left label
+        var rl=document.createElement('div'); rl.className='grl'+(late?' late-row':'');
+        var desc=j.description.length>28?j.description.slice(0,26)+'…':j.description;
+        var remLine=rem!==null
+          ?'<span class="grr '+(late?'late':'prog')+'">⧖ '+fmtRem(rem)+' remaining</span>'
+          :'<span class="grr plan">⊞ '+j.hours+'h this week</span>';
+        rl.innerHTML='<span class="gpn">'+j.job_number+'</span>'
+          +'<span class="grd">'+desc+'</span>'
+          +remLine
+          +'<span class="grf '+(late?'late':'')+'"><b>'+op.name.split(' ')[0]+'</b>'
+          +(j.due_date?' → due '+fmtDue(j.due_date):'')+'</span>';
+        row.appendChild(rl);
+
+        // Timeline cells
+        var tl=document.createElement('div'); tl.className='gtl';
+        for(var di=0;di<NDAYS;di++){
+          var isToday2=(di+1===todayDow);
+          for(var h=1;h<=NHOURS;h++){
+            var gc=document.createElement('div'); gc.className='gc'+(isToday2?' td':'');
+            tl.appendChild(gc);
+          }
+        }
+
+        // Bars from slot data
+        // j.slots is array of [day_of_week, hour_slot] (1-based)
+        if(j.slots && j.slots.length){
+          // Group into contiguous runs
+          var sorted=j.slots.slice().sort(function(a,b){
+            return (a[0]*8+a[1])-(b[0]*8+b[1]);
+          });
+          var runs=[], cur=null;
+          sorted.forEach(function(s){
+            var cell=(s[0]-1)*8+(s[1]-1);
+            if(!cur){cur={start:cell,end:cell};}
+            else if(cell===cur.end+1){cur.end=cell;}
+            else{runs.push(cur);cur={start:cell,end:cell};}
+          });
+          if(cur) runs.push(cur);
+          runs.forEach(function(run){
+            var bar=document.createElement('div'); bar.className='gbar '+c;
+            bar.style.left=(run.start/TCELLS*100)+'%';
+            bar.style.width=((run.end-run.start+1)/TCELLS*100)+'%';
+            bar.textContent=j.job_number;
+            tl.appendChild(bar);
+          });
+        } else if(late){
+          var bar=document.createElement('div'); bar.className='gbar late';
+          bar.style.left='1%'; bar.style.width='98%'; bar.style.justifyContent='center';
+          bar.textContent='⚠ Overdue – due '+fmtDue(j.due_date);
+          tl.appendChild(bar);
+        }
+
+        row.appendChild(tl);
+        bdy.appendChild(row);
+      });
+    });
+  });
+}
+
+function buildViews(){ buildV0(); buildV1(); buildV2(); }
+
+// ── Slide rotation ───────────────────────────────────────────
+var VIEWS=['v0','v1','v2'];
+var LABELS=['Team Plan for the Day','Individual Operator Plans','Gantt — By Operator'];
+var DUR=20000, cur=0, startMs=Date.now();
+
+function goTo(i){
+  document.getElementById(VIEWS[cur]).classList.remove('on');
+  document.querySelectorAll('#dots .dot')[cur].classList.remove('on');
+  cur=((i%3)+3)%3;
+  document.getElementById(VIEWS[cur]).classList.add('on');
+  document.querySelectorAll('#dots .dot')[cur].classList.add('on');
+  document.getElementById('vt').textContent=LABELS[cur];
+  document.getElementById('pb').style.width='0%';
+  startMs=Date.now();
+}
+document.getElementById('prev').onclick=function(){goTo(cur-1);};
+document.getElementById('next').onclick=function(){goTo(cur+1);};
+document.querySelectorAll('#dots .dot').forEach(function(dot){
+  dot.onclick=function(){goTo(parseInt(dot.getAttribute('data-i')));};
+});
+setInterval(function(){
+  var pct=Math.min((Date.now()-startMs)/DUR,1);
+  document.getElementById('pb').style.width=(pct*100)+'%';
+  if(pct>=1) goTo(cur+1);
+},100);
+
+// ── Live clock + remaining hours ─────────────────────────────
+var lastMin=-1;
+function tick(){
+  var n=new Date();
+  document.getElementById('clk').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+
+    String(n.getMinutes()).padStart(2,'0')+':'+
+    String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('hi-date').textContent=
+    n.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  if(n.getMinutes()!==lastMin){
+    lastMin=n.getMinutes();
+    // Update remaining hours on all views
+    document.querySelectorAll('[data-rem]').forEach(function(el){
+      var parts=el.getAttribute('data-rem').split(':');
+      var jobNum=parts[0], opName=parts.slice(1).join(':');
+      if(!PLAN) return;
+      PLAN.this_week.forEach(function(op){
+        if(op.name!==opName) return;
+        op.jobs.forEach(function(j){
+          if(j.job_number===jobNum) el.textContent=fmtRem(hrsRemaining(j));
+        });
+      });
+    });
+  }
+}
+tick(); setInterval(tick,1000);
+
+// ── Init + refresh ────────────────────────────────────────────
+loadData();
+setInterval(loadData, 60000); // refresh data every 60s
+</script>
+</body>
+</html>

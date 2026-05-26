@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Import from Emax{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Import from Emax</h1>
+    <p class="page-sub">Upload your weekly Works Orders and Sales Delivery Lines exports</p>
+  </div>
+</div>
+
+{% for cat, msg in get_flashed_messages(with_categories=true) %}
+<div class="alert alert--{{ 'success' if cat=='success' else 'error' }}">{{ msg }}</div>
+{% endfor %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+
+  <!-- Works Orders -->
+  <div class="card" style="padding:1.25rem 1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h2 style="font-family:var(--font-head);font-size:.9rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text);">Works Orders</h2>
+      {% if last_wo and last_wo.last %}
+        
+        <span class="badge badge--neutral">Last: {{ last_wo.last[:10] }}</span>
+      {% else %}
+        <span class="badge badge--neutral">Never imported</span>
+      {% endif %}
+    </div>
+    <p style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">
+      Export <strong>Current Work Orders (Wiring)</strong> from Emax as .xlsx and upload here.
+      Outstanding quantities will update automatically — completed WOs are skipped.
+    </p>
+    <form method="POST" action="{{ url_for('imports.upload_works_orders') }}" enctype="multipart/form-data">
+      <div style="display:flex;gap:.6rem;align-items:flex-end;">
+        <div style="flex:1;">
+          <label class="form-label">Select file (.xlsx)</label>
+          <input class="form-input" type="file" name="file" accept=".xlsx,.xls" required>
+        </div>
+        <button type="submit" class="btn btn--primary">Upload</button>
+      </div>
+    </form>
+    {% if last_wo %}
+    <div style="margin-top:.75rem;font-size:.78rem;color:var(--text-sec);">
+      {{ last_wo.n }} jobs in system from last import
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Sales Orders -->
+  <div class="card" style="padding:1.25rem 1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h2 style="font-family:var(--font-head);font-size:.9rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text);">Sales Delivery Lines</h2>
+      {% if last_so and last_so.last %}
+        <span class="badge badge--neutral">Last: {{ last_so.last[:10] }}</span>
+      {% else %}
+        <span class="badge badge--neutral">Never imported</span>
+      {% endif %}
+    </div>
+    <p style="font-size:.85rem;color:var(--text-sec);margin-bottom:1rem;">
+      Export <strong>Sales Delivery Lines Outstanding Next Week (Wiring)</strong> from Emax.
+      Due dates from these SOs will be applied to matching Works Orders automatically.
+    </p>
+    <form method="POST" action="{{ url_for('imports.upload_sales_orders') }}" enctype="multipart/form-data">
+      <div style="display:flex;gap:.6rem;align-items:flex-end;">
+        <div style="flex:1;">
+          <label class="form-label">Select file (.xlsx)</label>
+          <input class="form-input" type="file" name="file" accept=".xlsx,.xls" required>
+        </div>
+        <button type="submit" class="btn btn--primary">Upload</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<!-- How to export from Emax -->
+<div class="card" style="padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+  <h2 style="font-family:var(--font-head);font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.75rem;">How to Export from Emax</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;font-size:.84rem;color:var(--text-sec);">
+    <div>
+      <div style="font-family:var(--font-head);font-size:.75rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text);margin-bottom:.4rem;">Works Orders</div>
+      <ol style="margin:0;padding-left:1.2rem;line-height:1.8;">
+        <li>Open Emax → Manufacturing → Work Orders</li>
+        <li>Filter: Department = Wiring, Status = Open</li>
+        <li>Export → Excel (.xlsx)</li>
+        <li>Upload above</li>
+      </ol>
+    </div>
+    <div>
+      <div style="font-family:var(--font-head);font-size:.75rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text);margin-bottom:.4rem;">Sales Delivery Lines</div>
+      <ol style="margin:0;padding-left:1.2rem;line-height:1.8;">
+        <li>Open Emax → Sales → Delivery Schedule</li>
+        <li>Filter: Outstanding, Next Week, Wiring</li>
+        <li>Export → Excel (.xlsx)</li>
+        <li>Upload above</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- Recent imports -->
+{% if recent %}
+<div>
+  <h2 style="font-family:var(--font-head);font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.6rem;">Recently Imported Jobs</h2>
+  <div class="card" style="padding:0;">
+    <table class="data-table">
+      <thead><tr><th>Job No.</th><th>Status</th><th>Imported</th></tr></thead>
+      <tbody>
+        {% for r in recent %}
+        <tr>
+          <td style="font-family:var(--font-head);font-weight:700;font-size:.85rem;">{{ r.job_number }}</td>
+          <td><span class="badge badge--{% if r.status == 'In Progress' %}amber{% elif r.status == 'Scheduled' %}green{% else %}neutral{% endif %}">{{ r.status }}</span></td>
+          <td class="text-sec" style="font-size:.82rem;">{{ r.created_at[:16] if r.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}User Accounts{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">User Accounts</h1>
+    <p class="page-sub">Manage login access for managers and operators</p>
+  </div>
+</div>
+
+<!-- Add user form -->
+<div class="card" style="margin-top:1.5rem; margin-bottom:1.5rem;">
+  <div class="card-title" style="margin-bottom:1rem;">Create New Account</div>
+  <form method="POST" action="{{ url_for('users.add_user') }}">
+    <div class="form-row form-row--4">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" type="text" name="username" required placeholder="e.g. rob.kinton" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-input" name="role">
+          <option value="operator">Operator</option>
+          <option value="manager">Manager</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link to Employee <span class="text-sec">(optional)</span></label>
+        <select class="form-input" name="employee_id">
+          <option value="">— None —</option>
+          {% for emp in employees_unlinked %}
+            <option value="{{ emp.id }}">{{ emp.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password <span class="text-sec">(min 8 chars)</span></label>
+        <input class="form-input" type="password" name="password" required placeholder="••••••••" />
+      </div>
+    </div>
+    <button type="submit" class="btn btn--primary">Create Account</button>
+  </form>
+</div>
+
+<!-- Existing accounts -->
+<div class="card" style="padding:0;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Linked Employee</th>
+        <th>Created</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr class="{% if not u.active %}row-inactive{% endif %}">
+        <td><strong>{{ u.username }}</strong>
+          {% if u.id == session.user_id %}
+            <span class="badge badge--neutral" style="margin-left:.4rem;">You</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge {% if u.role == 'manager' %}badge--green{% else %}badge--amber{% endif %}">
+            {{ u.role }}
+          </span>
+        </td>
+        <td class="text-sec">{{ u.emp_name or '—' }}</td>
+        <td class="text-sec">{{ u.created_at[:10] }}</td>
+        <td>
+          <span class="badge {% if u.active %}badge--green{% else %}badge--neutral{% endif %}">
+            {{ 'Active' if u.active else 'Inactive' }}
+          </span>
+        </td>
+        <td class="row-actions">
+          <!-- Reset password -->
+          <button class="btn btn--ghost btn--sm"
+                  onclick="openResetModal({{ u.id }}, '{{ u.username }}')">Reset password</button>
+          <!-- Toggle active (can't deactivate yourself) -->
+          {% if u.id != session.user_id %}
+            <form method="POST" action="{{ url_for('users.toggle_user', user_id=u.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn--sm {% if u.active %}btn--ghost{% else %}btn--primary{% endif %}"
+                      onclick="return confirm('{{ 'Deactivate' if u.active else 'Activate' }} {{ u.username }}?')">
+                {{ 'Deactivate' if u.active else 'Activate' }}
+              </button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Reset password modal -->
+<div id="reset-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; align-items:center; justify-content:center; padding:1rem;">
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:2rem; width:100%; max-width:400px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+      <span style="font-family:var(--font-head); font-size:1.2rem; font-weight:700;">Reset Password</span>
+      <button onclick="closeResetModal()" style="background:none; border:none; color:var(--text-sec); font-size:1.4rem; cursor:pointer;">×</button>
+    </div>
+    <p style="color:var(--text-sec); font-size:.875rem; margin-bottom:1rem;">
+      Setting new password for <strong id="reset-username" style="color:var(--text);"></strong>
+    </p>
+    <form id="reset-form" method="POST">
+      <div class="form-group" style="margin-bottom:1.5rem;">
+        <label class="form-label">New Password</label>
+        <input class="form-input" type="password" name="password" required placeholder="Minimum 8 characters" />
+      </div>
+      <div style="display:flex; gap:.75rem; justify-content:flex-end;">
+        <button type="button" onclick="closeResetModal()" class="btn btn--ghost">Cancel</button>
+        <button type="submit" class="btn btn--primary">Reset Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openResetModal(userId, username) {
+  document.getElementById('reset-username').textContent = username;
+  document.getElementById('reset-form').action = '/manager/users/' + userId + '/reset-password';
+  const modal = document.getElementById('reset-modal');
+  modal.style.display = 'flex';
+}
+function closeResetModal() {
+  document.getElementById('reset-modal').style.display = 'none';
+}
+document.getElementById('reset-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeResetModal();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Add Job{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">Add Job</h1><p class="page-sub">Create a manual job or stock build</p></div>
+  <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn--ghost">← Jobs</a>
+</div>
+<div class="form-card">
+  {% for err in errors %}<div class="form-error">{{ err }}</div>{% endfor %}
+  <form method="POST">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Job Number <span class="text-sec">(from ERP / Works Order)</span></label>
+        <input class="form-input" type="text" name="job_number" value="{{ form.job_number or '' }}" required placeholder="e.g. SO021696.8" autofocus />
+      </div>
+      <div class="form-group">
+        <label class="form-label">EAS / Project Number</label>
+        <input class="form-input" type="text" name="eas_number" value="{{ form.eas_number or '' }}" placeholder="e.g. EAS26116" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Customer</label>
+        <input class="form-input" type="text" name="customer" value="{{ form.customer or '' }}" placeholder="Customer name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Customer PO</label>
+        <input class="form-input" type="text" name="customers_po" value="{{ form.customers_po or '' }}" placeholder="e.g. DS-E101-202622" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Link to Part Number <span class="text-sec">(optional)</span></label>
+      <select class="form-input" name="part_id">
+        <option value="">— Select part number —</option>
+        {% for p in parts %}
+          <option value="{{ p.id }}" {% if form.part_id == p.id|string %}selected{% endif %}>
+            {{ p.part_number }}{% if p.description %} — {{ p.description }}{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description <span class="text-sec">(if no part number linked)</span></label>
+      <input class="form-input" type="text" name="description" value="{{ form.description or '' }}" placeholder="What is this job?" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quantity</label>
+        <input class="form-input" type="number" name="quantity" value="{{ form.quantity or 1 }}" min="1" step="1" style="max-width:120px;" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Due Date</label>
+        <input class="form-input" type="date" name="due_date" value="{{ form.due_date or '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sale Value (£)</label>
+        <input class="form-input" type="number" name="sale_value" value="{{ form.sale_value or '' }}" step="0.01" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Team Assignment</label>
+        <select class="form-input" name="team">
+          <option value="General" {% if not form.team or form.team == "General" %}selected{% endif %}>General</option>
+          <option value="Davenham" {% if form.team == "Davenham" %}selected{% endif %}>Davenham</option>
+        </select>
+        <p class="form-hint">Auto-detected from customer name. Override here if needed.</p>
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:.25rem;">
+        <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.9rem;">
+          <input type="checkbox" name="for_stock" {% if form.for_stock %}checked{% endif %} style="accent-color:var(--green);width:16px;height:16px;" />
+          <span>Build for stock <span class="text-sec">(not a customer order)</span></span>
+        </label>
+      </div>
+    </div>
+    <div class="form-footer">
+      <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn--ghost">Cancel</a>
+      <button type="submit" class="btn btn--primary">Create Job</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

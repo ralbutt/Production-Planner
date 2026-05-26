@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}First-Time Setup{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+
+  <div class="auth-logo">
+    <div class="auth-logo-mark">RA</div>
+    <div class="auth-logo-text">
+      <span class="auth-brand">RAPID ASSEMBLY</span>
+      <span class="auth-tagline">Production Planner</span>
+    </div>
+  </div>
+
+  <h2 class="auth-title">First-time setup</h2>
+  <p class="auth-subtitle">
+    Create your manager account to get started. You can add operators and additional managers afterwards.
+  </p>
+
+  {% if error %}
+    <div class="form-error">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('auth.setup') }}">
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <input
+        class="form-input"
+        type="text"
+        id="username"
+        name="username"
+        autocomplete="username"
+        autofocus
+        required
+        placeholder="e.g. rob.kinton"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <input
+        class="form-input"
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="new-password"
+        required
+        placeholder="Minimum 8 characters"
+      />
+    </div>
+
+    <div class="form-group" style="margin-bottom:1.5rem;">
+      <label class="form-label" for="confirm">Confirm password</label>
+      <input
+        class="form-input"
+        type="password"
+        id="confirm"
+        name="confirm"
+        autocomplete="new-password"
+        required
+        placeholder="Repeat password"
+      />
+    </div>
+
+    <button type="submit" class="btn btn--primary btn--full">Create manager account</button>
+  </form>
+</div>
+{% endblock %}

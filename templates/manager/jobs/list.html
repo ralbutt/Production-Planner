@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Jobs{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Jobs</h1>
+    <p class="page-sub">{{ jobs|length }} jobs · all works orders</p>
+  </div>
+  <div style="display:flex;gap:.75rem;">
+    <a href="{{ url_for('jobs.erp_import') }}" class="btn btn--ghost">⬆ Import from Emax</a>
+    <a href="{{ url_for('jobs.add_job') }}" class="btn btn--primary">＋ Add Job</a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+  <form method="GET" style="display:flex;gap:.75rem;flex-wrap:wrap;">
+    <select name="status" class="form-input" style="width:auto;min-width:160px;" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      {% for s in ['Unscheduled','Scheduled','In Progress','Complete','On Hold'] %}
+        <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <select name="customer" class="form-input" style="width:auto;min-width:200px;" onchange="this.form.submit()">
+      <option value="">All Customers</option>
+      {% for c in customers %}
+        <option value="{{ c.customer }}" {% if customer_filter==c.customer %}selected{% endif %}>{{ c.customer }}</option>
+      {% endfor %}
+    </select>
+    {% if status_filter or customer_filter %}
+      <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn--ghost btn--sm">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card" style="padding:0;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Job No.</th>
+        <th>EAS / Project</th>
+        <th>Customer</th>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Due Date</th>
+        <th>Value</th>
+        <th>Status</th>
+        <th>Flags</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr>
+        <td>
+          <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="row-link">
+            {{ job.job_number }}
+          </a>
+          {% if job.source == 'erp' %}
+            <span class="badge badge--neutral" style="margin-left:.3rem;font-size:.62rem;">ERP</span>
+          {% endif %}
+        </td>
+        <td class="text-sec" style="font-size:.82rem;">{{ job.eas_number or '—' }}</td>
+        <td class="text-sec" style="font-size:.85rem;">{{ job.customer or '—' }}</td>
+        <td class="text-sec" style="font-size:.85rem;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {{ job.part_number or job.description or '—' }}
+        </td>
+        <td class="text-sec">{{ job.quantity|int }}</td>
+        <td>
+          {% if job.due_date %}
+            <span style="color:{% if job.due_date < '2026-05-25' and job.status not in ['Complete'] %}var(--red){% else %}var(--text-sec){% endif %};">
+              {{ job.due_date }}
+            </span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="text-sec">
+          {% if job.sale_value %}£{{ '%.0f'|format(job.sale_value) }}{% else %}—{% endif %}
+        </td>
+        <td>
+          {% if job.status == 'Complete' %}
+            <span class="badge badge--green">Complete</span>
+          {% elif job.status == 'In Progress' %}
+            <span class="badge badge--amber">In Progress</span>
+          {% elif job.status == 'Scheduled' %}
+            <span class="badge badge--green" style="opacity:.7;">Scheduled</span>
+          {% elif job.status == 'On Hold' %}
+            <span class="badge badge--red">On Hold</span>
+          {% else %}
+            <span class="badge badge--neutral">Unscheduled</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if job.waiting_parts %}
+            <span class="badge badge--red" title="Waiting on Parts">⚠ Parts</span>
+          {% endif %}
+          {% if job.for_stock %}
+            <span class="badge badge--neutral">Stock</span>
+          {% endif %}
+        </td>
+        <td class="row-actions">
+          <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="btn btn--ghost btn--sm">View</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="10" style="text-align:center;padding:3rem;color:var(--text-sec);">
+          No jobs yet. <a href="{{ url_for('jobs.erp_import') }}">Import from Emax</a> or
+          <a href="{{ url_for('jobs.add_job') }}">add one manually</a>.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

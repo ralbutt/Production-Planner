@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Operator Dashboard{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:4rem auto;text-align:center;">
+  <div class="card" style="padding:2.5rem;">
+    <div style="font-size:2rem;margin-bottom:1rem;">👤</div>
+    <h1 style="font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:.5rem;">No Employee Record Found</h1>
+    <p style="color:var(--text-sec);font-size:.88rem;margin-bottom:1rem;">
+      Your user account (<strong>{{ username }}</strong>) hasn't been linked to an employee record yet.
+      Ask your manager to update your name in the Employees page to match your login name.
+    </p>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn--ghost btn--sm">Sign out</a>
+  </div>
+</div>
+{% endblock %}

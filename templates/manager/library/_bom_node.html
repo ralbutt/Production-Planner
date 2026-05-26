@@ -1,0 +1,36 @@
+{% macro render_node(node, depth) %}
+<div class="bom-node" style="margin-left:{{ depth * 28 }}px;">
+  <div class="bom-connector"></div>
+  <div class="bom-item">
+    <a href="{{ url_for('library.detail', part_id=node.id) }}" class="bom-pn" style="text-decoration:none;">
+      {{ node.part_number }}
+    </a>
+    <span class="bom-desc">{{ node.description or '' }}</span>
+    <span class="bom-mode {{ node.run_mode }}">{{ node.run_mode }}</span>
+    {% if node.quantity != 1 %}
+      <span class="text-sec" style="font-size:.8rem; white-space:nowrap;">× {{ node.quantity }}</span>
+    {% endif %}
+    <span class="bom-hours">
+      {% if node.actual_hours_count %}
+        {{ '%.1f'|format(node.avg_hours) }}h avg
+      {% elif node.estimated_hours %}
+        ~{{ node.estimated_hours }}h est
+      {% else %}
+        —
+      {% endif %}
+    </span>
+    <div class="bom-actions">
+      <form method="POST"
+            action="{{ url_for('library.remove_child', part_id=node.id, bom_id=node.bom_id) }}"
+            style="display:inline;">
+        <button type="submit" class="btn btn--ghost btn--sm"
+                onclick="return confirm('Remove {{ node.part_number }} from this BOM?')"
+                title="Remove from BOM">✕</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% for child in node.children %}
+  {{ render_node(child, depth + 1) }}
+{% endfor %}
+{% endmacro %}

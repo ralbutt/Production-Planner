@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Rapid Assembly{% endblock %} — Production Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+{% if session.get('user_id') %}
+<header class="app-header">
+  <div class="header-left">
+    <!-- Rapid Assembly logo mark — traced from brand presentation -->
+    <svg class="logo-svg" viewBox="0 0 74 92" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Piece 1: top-left block (upright of R), rounded top-left -->
+      <path d="M 7 0 Q 0 0 0 7 L 0 26.6 L 46.5 26.6 L 46.5 0 Z" fill="#5de08a"/>
+      <!-- Piece 2: top-right wedge, diagonal bottom-left edge -->
+      <path d="M 48.9 0 L 72 0 L 72 26.6 L 39 26.6 Z" fill="#5de08a"/>
+      <!-- Piece 3: lower-right wedge, diagonal left edge -->
+      <path d="M 39 28.9 L 72 28.9 L 72 48.8 L 24.7 48.8 Z" fill="#5de08a"/>
+      <!-- Piece 4: bottom tail tapering to point -->
+      <path d="M 1.2 50 L 47.7 50 L 46.9 92 Z" fill="#5de08a"/>
+    </svg>
+    <span class="header-brand">Rapid.<span>Assembly</span></span>
+    <span class="header-sub">Production Planner</span>
+  </div>
+
+  <nav class="header-nav">
+    {% if session.get('role') == 'manager' %}
+      <a href="{{ url_for('manager.dashboard') }}"
+         class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="{{ url_for('scheduler.index') }}"
+         class="nav-link {% if active_page == 'schedule' %}active{% endif %}">Schedule</a>
+      <a href="{{ url_for('sales_orders.index') }}"
+         class="nav-link {% if active_page == 'sales_orders' %}active{% endif %}">Sales Orders</a>
+      <a href="{{ url_for('employees.list_employees') }}"
+         class="nav-link {% if active_page == 'employees' %}active{% endif %}">People</a>
+      <a href="{{ url_for('library.list_parts') }}"
+         class="nav-link {% if active_page == 'library' %}active{% endif %}">Library</a>
+      <a href="{{ url_for('availability.index') }}"
+         class="nav-link {% if active_page == 'availability' %}active{% endif %}">Availability</a>
+      <a href="{{ url_for('imports.index') }}"
+         class="nav-link {% if active_page == 'imports' %}active{% endif %}">Import</a>
+      <a href="{{ url_for('jobs.list_jobs') }}"
+         class="nav-link {% if active_page == 'jobs' %}active{% endif %}">Jobs</a>
+    {% endif %}
+    {% if session.get('role') == 'operator' %}
+      <a href="{{ url_for('operator.dashboard') }}"
+         class="nav-link {% if active_page == 'operator' %}active{% endif %}">My Work</a>
+    {% endif %}
+  </nav>
+
+  <div class="header-right">
+    <span class="user-pill">
+      <span class="user-role-badge {{ session.get('role') }}">{{ session.get('role')|upper }}</span>
+      {{ session.get('username') }}
+    </span>
+    <a href="{{ url_for('auth.logout') }}" class="btn-logout">Sign out</a>
+  </div>
+</header>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main class="main-content {% if not session.get('user_id') %}centered{% endif %}">
+  {% block content %}{% endblock %}
+</main>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

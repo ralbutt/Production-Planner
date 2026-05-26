@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+
+  <div class="auth-logo">
+    <div class="auth-logo-mark">RA</div>
+    <div class="auth-logo-text">
+      <span class="auth-brand">RAPID ASSEMBLY</span>
+      <span class="auth-tagline">Production Planner</span>
+    </div>
+  </div>
+
+  <h2 class="auth-title">Welcome back</h2>
+  <p class="auth-subtitle">Sign in to continue to your planner.</p>
+
+  {% if error %}
+    <div class="form-error">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('auth.login') }}">
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <input
+        class="form-input"
+        type="text"
+        id="username"
+        name="username"
+        autocomplete="username"
+        autofocus
+        required
+        placeholder="Your username"
+      />
+    </div>
+
+    <div class="form-group" style="margin-bottom:1.5rem;">
+      <label class="form-label" for="password">Password</label>
+      <input
+        class="form-input"
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="current-password"
+        required
+        placeholder="••••••••"
+      />
+    </div>
+
+    <button type="submit" class="btn btn--primary btn--full">Sign in</button>
+  </form>
+</div>
+{% endblock %}

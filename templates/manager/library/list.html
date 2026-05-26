@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Product Library{% endblock %}
+
+{% block head %}
+<style>
+.hours-form { display:inline-flex; align-items:center; gap:.3rem; }
+.hours-display {
+  display:inline-flex; align-items:center; gap:.4rem;
+  cursor:pointer; padding:2px 6px; border-radius:4px;
+  transition:background 150ms;
+}
+.hours-display:hover { background:rgba(93,224,138,.1); }
+.hours-display .edit-icon { color:var(--text-sec); font-size:.75rem; opacity:0; transition:opacity 150ms; }
+.hours-display:hover .edit-icon { opacity:1; }
+.hours-input-wrap { display:none; align-items:center; gap:.3rem; }
+.hours-input-wrap input {
+  width:70px; background:rgba(0,0,0,.5); border:1px solid var(--green);
+  border-radius:4px; color:var(--text); padding:3px 7px;
+  font-family:var(--font-body); font-size:.875rem; outline:none;
+}
+.hours-input-wrap .save-btn {
+  background:var(--green); border:none; border-radius:4px;
+  color:#000; font-family:var(--font-head); font-size:.72rem;
+  font-weight:700; padding:3px 8px; cursor:pointer; letter-spacing:.05em;
+}
+.hours-input-wrap .cancel-btn {
+  background:transparent; border:1px solid var(--border); border-radius:4px;
+  color:var(--text-sec); font-size:.72rem; padding:3px 6px; cursor:pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Product Library</h1>
+    <p class="page-sub">{{ parts|length }} part numbers · click any hours value to edit inline</p>
+  </div>
+  <a href="{{ url_for('library.add_part') }}" class="btn btn--primary">＋ Add Part Number</a>
+</div>
+
+<div class="card" style="padding:0; margin-top:1.5rem;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Part Number</th>
+        <th>Description</th>
+        <th>Type</th>
+        <th>Min. Grade</th>
+        <th title="Click to edit">Hours / Unit ✎</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in parts %}
+      <tr>
+        <td>
+          <a href="{{ url_for('library.detail', part_id=p.id) }}" class="row-link">
+            {{ p.part_number }}
+          </a>
+        </td>
+        <td class="text-sec">{{ p.description or '—' }}</td>
+        <td>
+          {% if p.part_type == 'assembly' %}
+            <span class="badge badge--green">Assembly</span>
+            <span class="text-sec" style="font-size:.8rem;"> ({{ p.child_count }} parts)</span>
+          {% else %}
+            <span class="badge badge--neutral">Single</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.min_grade_name %}
+            {% if p.min_grade_name in ['Advanced Wireman','Skilled'] %}
+              <span class="badge badge--green">{{ p.min_grade_name }}</span>
+            {% elif p.min_grade_name == 'Competent' %}
+              <span class="badge badge--amber">{{ p.min_grade_name }}</span>
+            {% else %}
+              <span class="badge badge--neutral">{{ p.min_grade_name }}</span>
+            {% endif %}
+          {% else %}
+            <span class="text-sec">Any</span>
+          {% endif %}
+        </td>
+
+        <!-- Inline editable hours -->
+        <td id="hours-cell-{{ p.id }}">
+          <!-- Display mode -->
+          <span class="hours-display" onclick="editHours({{ p.id }}, {{ p.estimated_hours or 1 }})">
+            <strong style="color:var(--text);">{{ p.estimated_hours or 1 }}h</strong>
+            <span class="edit-icon">✎</span>
+          </span>
+          <!-- Edit mode (hidden) -->
+          <span class="hours-input-wrap" id="hours-edit-{{ p.id }}">
+            <form method="POST" action="{{ url_for('library.update_hours') }}" class="hours-form">
+              <input type="hidden" name="part_id" value="{{ p.id }}">
+              <input type="number" name="hours" id="hours-val-{{ p.id }}"
+                     value="{{ p.estimated_hours or 1 }}"
+                     min="0.25" step="0.25"
+                     onkeydown="if(event.key==='Escape')cancelHours({{ p.id }})">
+              <button type="submit" class="save-btn">✓</button>
+              <button type="button" class="cancel-btn" onclick="cancelHours({{ p.id }})">✕</button>
+            </form>
+          </span>
+        </td>
+
+        <td class="row-actions">
+          <a href="{{ url_for('library.detail', part_id=p.id) }}" class="btn btn--ghost btn--sm">View BOM</a>
+          <a href="{{ url_for('library.edit_part', part_id=p.id) }}" class="btn btn--ghost btn--sm">Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not parts %}
+      <tr>
+        <td colspan="6" style="text-align:center;padding:3rem;color:var(--text-sec);">
+          No parts yet. <a href="{{ url_for('library.add_part') }}">Add the first one</a>.
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editHours(id, current) {
+  // Hide display, show input
+  document.querySelector(`#hours-cell-${id} .hours-display`).style.display = 'none';
+  const wrap = document.getElementById(`hours-edit-${id}`);
+  wrap.style.display = 'inline-flex';
+  const inp = document.getElementById(`hours-val-${id}`);
+  inp.value = current;
+  inp.focus();
+  inp.select();
+}
+function cancelHours(id) {
+  document.querySelector(`#hours-cell-${id} .hours-display`).style.display = '';
+  document.getElementById(`hours-edit-${id}`).style.display = 'none';
+}
+</script>
+{% endblock %}

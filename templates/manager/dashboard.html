@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set active_page = "dashboard" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dash-welcome">
+  <h1>Good to see you, <span>{{ username }}</span></h1>
+  <p style="color:var(--text-sec); margin-top:0.3rem; font-size:0.95rem;">
+    Here's what's happening on the shop floor today.
+  </p>
+</div>
+
+<div class="dash-grid">
+  <div class="dash-tile">
+    <span class="dash-tile__label">Employees</span>
+    <span class="dash-tile__value" style="color:var(--green)">{{ employee_count }}</span>
+    <span class="dash-tile__note">{{ active_count }} active</span>
+  </div>
+  <div class="dash-tile">
+    <span class="dash-tile__label">User Accounts</span>
+    <span class="dash-tile__value" style="color:var(--green)">{{ user_count }}</span>
+    <span class="dash-tile__note">{{ manager_count }} manager · {{ operator_count }} operator</span>
+  </div>
+  <div class="dash-tile">
+    <span class="dash-tile__label">Active Jobs</span>
+    <span class="dash-tile__value">—</span>
+    <span class="dash-tile__note"><span class="coming-soon">Coming in Section 4</span></span>
+  </div>
+  <div class="dash-tile">
+    <span class="dash-tile__label">On-Time Delivery</span>
+    <span class="dash-tile__value">—</span>
+    <span class="dash-tile__note"><span class="coming-soon">Coming in Section 8</span></span>
+  </div>
+</div>
+
+<div style="margin-top:2.5rem;">
+  <h2 class="section-label">Quick Actions</h2>
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.75rem;">
+    <a href="{{ url_for('employees.add_employee') }}" class="btn btn--primary">＋ Add Employee</a>
+    <a href="{{ url_for('employees.list_employees') }}" class="btn btn--ghost">View Employees</a>
+    <a href="{{ url_for('users.list_users') }}" class="btn btn--ghost">Manage Users</a>
+    <span class="btn btn--ghost" style="opacity:.45;cursor:default;">
+      Product Library <span class="coming-soon" style="margin-left:.4rem;">Section 3</span>
+    </span>
+    <span class="btn btn--ghost" style="opacity:.45;cursor:default;">
+      Import ERP <span class="coming-soon" style="margin-left:.4rem;">Section 4</span>
+    </span>
+  </div>
+</div>
+{% endblock %}

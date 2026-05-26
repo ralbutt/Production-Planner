@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if mode == 'edit' else 'Add' }} Part Number{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ 'Edit Part' if mode == 'edit' else 'Add Part Number' }}</h1>
+    {% if mode == 'edit' %}
+      <p class="page-sub">{{ part.part_number }}</p>
+    {% endif %}
+  </div>
+  <a href="{{ url_for('library.list_parts') }}" class="btn btn--ghost">← Library</a>
+</div>
+
+<div class="form-card">
+  {% for err in errors %}
+    <div class="form-error">{{ err }}</div>
+  {% endfor %}
+
+  <form method="POST">
+
+    {% if mode == 'add' %}
+    <div class="form-group">
+      <label class="form-label" for="part_number">Part Number</label>
+      <input class="form-input" type="text" id="part_number" name="part_number"
+             value="{{ form.part_number or '' }}" required
+             placeholder="e.g. CCW-4471" autofocus style="max-width:280px;" />
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label" for="description">Description <span class="text-sec">(optional)</span></label>
+      <input class="form-input" type="text" id="description" name="description"
+             value="{{ form.description or '' }}"
+             placeholder="Brief description of what this part is" />
+    </div>
+
+    {% if mode == 'add' %}
+    <div class="form-group" style="max-width:280px;">
+      <label class="form-label">Type</label>
+      <div style="display:flex; gap:.5rem; margin-top:.4rem;">
+        <label class="type-toggle" id="toggle-single">
+          <input type="radio" name="part_type" value="single" checked /> Single Level
+        </label>
+        <label class="type-toggle" id="toggle-assembly">
+          <input type="radio" name="part_type" value="assembly" /> Assembly
+        </label>
+      </div>
+      <p class="form-hint">
+        Single level = one job, one team. Assembly = made up of child parts that get scheduled separately.
+      </p>
+    </div>
+    {% endif %}
+
+    <div class="form-group" style="max-width:280px;">
+      <label class="form-label" for="min_grade_id">Minimum Grade</label>
+      <select class="form-input" id="min_grade_id" name="min_grade_id">
+        <option value="">— No minimum —</option>
+        {% for tier in tiers %}
+          <option value="{{ tier.id }}"
+            {% set cur = form.min_grade_id if form.min_grade_id else (part.min_grade_id|string if mode == 'edit' and part.min_grade_id else '') %}
+            {% if cur == tier.id|string %}selected{% endif %}>
+            {{ tier.name }}
+          </option>
+        {% endfor %}
+      </select>
+      <p class="form-hint">Only operators at this grade or above will be assigned to this job. Ideal grade is matched first.</p>
+    </div>
+
+    <div class="form-group" style="max-width:200px;">
+      <label class="form-label" for="estimated_hours">
+        Estimated Hours <span class="text-sec">(optional starting point)</span>
+      </label>
+      <input class="form-input" type="number" id="estimated_hours" name="estimated_hours"
+             step="0.5" min="0"
+             value="{{ form.estimated_hours or '' }}"
+             placeholder="e.g. 8" />
+      <p class="form-hint">This will be refined automatically as actual job times are logged.</p>
+    </div>
+
+    <div class="form-footer">
+      <a href="{{ url_for('library.list_parts') }}" class="btn btn--ghost">Cancel</a>
+      <button type="submit" class="btn btn--primary">
+        {{ 'Save Changes' if mode == 'edit' else 'Add Part' }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.type-toggle {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-family: var(--font-head);
+  font-size: .85rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  padding: .5rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text-sec);
+  transition: all var(--transition);
+  user-select: none;
+}
+.type-toggle input { accent-color: var(--green); }
+.type-toggle:has(input:checked) {
+  border-color: var(--green);
+  background: rgba(93,224,138,.1);
+  color: var(--green);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}My Work — {{ operator.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ operator.name }}</h1>
+    <p class="page-sub">{{ operator.grade }} · {{ operator.team }} Team · Week of {{ week_start }}</p>
+  </div>
+</div>
+
+<!-- This week's jobs -->
+{% if this_week %}
+<div style="margin-bottom:1.5rem;">
+  <h2 style="font-family:var(--font-head);font-size:.85rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-bottom:.75rem;">
+    This Week
+  </h2>
+  {% for job in this_week %}
+  <div class="card" style="padding:1rem 1.25rem;margin-bottom:.5rem;border-left:3px solid {{ 'var(--amber)' if job.status == 'In Progress' else 'var(--green)' }};">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.3rem;">
+      <div>
+        <div style="font-family:var(--font-head);font-weight:800;font-size:1rem;color:var(--text);">{{ job.job_number }}</div>
+        <div style="font-size:.85rem;color:var(--text-sec);margin-top:.1rem;">{{ job.description or job.part_number }}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge badge--{% if job.status == 'In Progress' %}amber{% else %}green{% endif %}">{{ job.status }}</span>
+        {% if job.due_date %}
+        <div style="font-size:.75rem;color:{% if job.due_date < today %}var(--red){% else %}var(--text-sec){% endif %};margin-top:.25rem;">
+          Due {{ job.due_date }}{% if job.due_date < today %} ⚠{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display:flex;gap:1.25rem;font-size:.8rem;color:var(--text-sec);margin-bottom:.6rem;">
+      <span>Qty: <strong style="color:var(--text);">{{ job.quantity|int }}</strong></span>
+      <span>Hours this week: <strong style="color:var(--text);">{{ job.hours_this_week }}h</strong></span>
+      {% if job.customer %}<span>Customer: {{ job.customer }}</span>{% endif %}
+      {% if job.so_ref %}<span style="color:var(--blue);">{{ job.so_ref }}</span>{% endif %}
+    </div>
+    {% if job.status != 'Complete' %}
+    <form method="POST" action="{{ url_for('operator.mark_complete', job_id=job.job_id) }}">
+      <button type="submit" class="btn btn--primary btn--sm">✓ Mark Complete</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;margin-bottom:1.5rem;">
+  <div style="font-size:1.5rem;margin-bottom:.5rem;">📋</div>
+  <div style="font-family:var(--font-head);font-size:.95rem;font-weight:700;color:var(--text);">No jobs scheduled this week</div>
+  <p style="color:var(--text-sec);font-size:.85rem;margin-top:.35rem;">Check back after Denisa runs the plan on Friday.</p>
+</div>
+{% endif %}
+
+<!-- Coming up -->
+{% if upcoming %}
+<div>
+  <h2 style="font-family:var(--font-head);font-size:.85rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.75rem;">
+    Coming Up
+  </h2>
+  {% for job in upcoming %}
+  <div class="card" style="padding:.85rem 1.1rem;margin-bottom:.4rem;opacity:.8;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-family:var(--font-head);font-weight:700;font-size:.9rem;color:var(--text);">{{ job.job_number }}</div>
+        <div style="font-size:.8rem;color:var(--text-sec);">{{ job.description or job.part_number }} · W/C {{ job.week_start }}</div>
+      </div>
+      <div style="text-align:right;font-size:.8rem;color:var(--text-sec);">
+        {{ job.hours_that_week }}h
+        {% if job.due_date %}<div>Due {{ job.due_date }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

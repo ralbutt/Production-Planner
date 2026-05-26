@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Employees</h1>
+    <p class="page-sub">{{ employees|length }} people · manage grades and team assignments</p>
+  </div>
+  <a href="{{ url_for('employees.add_employee') }}" class="btn btn--primary">＋ Add Employee</a>
+</div>
+
+<div class="card" style="padding:0; margin-top:1.5rem;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Department</th>
+        <th>Grade</th>
+        <th>Team</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set current_team = namespace(value='') %}
+      {% for emp in employees %}
+
+      {% if emp.team != current_team.value %}
+        {% set current_team.value = emp.team %}
+        <tr>
+          <td colspan="6" style="padding:.5rem 1rem .3rem; background:rgba(0,0,0,.2);">
+            <span style="font-family:var(--font-head);font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:{% if emp.team == 'Davenham' %}var(--amber){% else %}var(--text-sec){% endif %};">
+              {{ emp.team }} Team
+            </span>
+          </td>
+        </tr>
+      {% endif %}
+
+      <tr class="{% if not emp.active %}row-inactive{% endif %}">
+        <td>
+          <a href="{{ url_for('employees.detail', emp_id=emp.id) }}" class="row-link">
+            {{ emp.name }}
+          </a>
+        </td>
+        <td class="text-sec">{{ emp.department or '—' }}</td>
+        <td>
+          {% if emp.tier_name == 'Advanced Wireman' %}
+            <span class="badge badge--green">Advanced Wireman</span>
+          {% elif emp.tier_name == 'Skilled' %}
+            <span class="badge badge--green">Skilled</span>
+          {% elif emp.tier_name == 'Competent' %}
+            <span class="badge badge--amber">Competent</span>
+          {% else %}
+            <span class="badge badge--neutral">Trainee</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge {% if emp.team == 'Davenham' %}badge--amber{% else %}badge--neutral{% endif %}">
+            {{ emp.team }}
+          </span>
+        </td>
+        <td>
+          {% if emp.active %}
+            <span class="badge badge--green">Active</span>
+          {% else %}
+            <span class="badge badge--neutral">Inactive</span>
+          {% endif %}
+        </td>
+        <td class="row-actions">
+          <a href="{{ url_for('employees.detail', emp_id=emp.id) }}" class="btn btn--ghost btn--sm">View</a>
+          <a href="{{ url_for('employees.edit_employee', emp_id=emp.id) }}" class="btn btn--ghost btn--sm">Edit</a>
+          <form method="POST" action="{{ url_for('employees.toggle_active', emp_id=emp.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn--sm {% if emp.active %}btn--ghost{% else %}btn--primary{% endif %}"
+                    onclick="return confirm('{{ 'Deactivate' if emp.active else 'Activate' }} {{ emp.name }}?')">
+              {{ 'Deactivate' if emp.active else 'Activate' }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

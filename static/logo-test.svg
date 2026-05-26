@@ -1,0 +1,70 @@
+<svg viewBox="0 0 100 105" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Logo geometry (normalised from 280x270 pixel image):
+    Image coords → SVG: subtract (67, 42) offset, divide by 2.3 for x, 2.28 for y
+
+    Outer bounding box in image coords: x=67-248, y=42-269
+    In SVG coords (0-100 range over 181px wide, 227px tall):
+      x: (img_x - 67) * (100/181)
+      y: (img_y - 42) * (105/227)
+
+    Key coordinates:
+    - Top-left corner: img (67, 58) → svg (0, 7.4)  [curved]
+    - Top-left of shape: img (72, 42) → svg (2.8, 0)
+    - Top-right main: img (175, 42) → svg (59.7, 0)
+    - Vertical gap right edge: img (187, 42) → svg (66.3, 0)
+    - Top-right corner: img (248, 42) → svg (100, 0)
+    - Horizontal gap: img y=109-115 → svg y=(29.5-31.9)
+    - Right-edge of left piece at y=109: img x=187 → svg x=66.3
+    - Bottom of right-top wedge: somewhere around img y=109
+    - Right wedge bottom: img (248, 109) → svg (100, 29.5)
+    - Bottom-right of lower section: img (248, 165) → svg (100, 56.8)  
+    - Actually right piece only goes to x=248 in top half
+    - In bottom half (y>115) right piece goes to x=248 again
+    - Below y=168 the LEFT edge cuts diagonally: img (70, 168) → svg (0.2, 55.1)
+    - And RIGHT edge stays at x=187 until y=224 → svg x=66.3, y=79.9
+    - Bottom tip: img (~185,267) → svg (~51.9,98.7)
+  -->
+
+  <!-- PIECE 1: Top-left main block (upper half of R, left portion) -->
+  <!-- x=67-187, y=42-109 with rounded top-left corner -->
+  <path d="
+    M 7 0
+    Q 0 0, 0 7
+    L 0 30
+    L 66 30
+    L 66 0
+    Z
+  " fill="#5de08a"/>
+
+  <!-- PIECE 2: Top-right wedge (upper right of R) -->
+  <!-- x=193-248, y=42-109 with diagonal bottom-left corner -->
+  <path d="
+    M 70 0
+    L 100 0
+    L 100 30
+    L 70 30
+    Z
+  " fill="#5de08a"/>
+
+  <!-- PIECE 3: Bottom-right wedge (lower right of R, the shoulder) -->
+  <!-- x=193-248, y=115-165 approximately -->
+  <path d="
+    M 70 33
+    L 100 33
+    L 100 56
+    L 70 56
+    Z
+  " fill="#5de08a"/>
+
+  <!-- PIECE 4: Bottom tail (the diagonal leg of the R) -->
+  <!-- Left edge slopes from (67,168) to (185,269) -->
+  <!-- Right edge at x=187 from y=115 to y=168, then → tip -->
+  <path d="
+    M 0 58
+    L 66 33
+    L 66 58
+    L 51 105
+    Z
+  " fill="#5de08a"/>
+</svg>

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ job.job_number }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ job.job_number }}</h1>
+    <p class="page-sub">
+      {{ job.customer or 'No customer' }}
+      {% if job.eas_number %} · {{ job.eas_number }}{% endif %}
+      {% if job.for_stock %} · <span style="color:var(--text-sec);">Stock build</span>{% endif %}
+    </p>
+  </div>
+  <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn--ghost">← Jobs</a>
+</div>
+
+<div class="detail-grid">
+  <div class="detail-col">
+
+    <!-- Status card -->
+    <div class="card">
+      <div class="card-title">Status</div>
+      <div style="margin:.75rem 0 1.25rem;">
+        {% if job.status == 'Complete' %}<span class="badge badge--green" style="font-size:.85rem;padding:4px 14px;">Complete</span>
+        {% elif job.status == 'In Progress' %}<span class="badge badge--amber" style="font-size:.85rem;padding:4px 14px;">In Progress</span>
+        {% elif job.status == 'Scheduled' %}<span class="badge badge--green" style="font-size:.85rem;padding:4px 14px;opacity:.7;">Scheduled</span>
+        {% elif job.status == 'On Hold' %}<span class="badge badge--red" style="font-size:.85rem;padding:4px 14px;">On Hold</span>
+        {% else %}<span class="badge badge--neutral" style="font-size:.85rem;padding:4px 14px;">Unscheduled</span>{% endif %}
+        {% if job.waiting_parts %}
+          <span class="badge badge--red" style="margin-left:.5rem;">⚠ Waiting on Parts</span>
+        {% endif %}
+      </div>
+      <form method="POST" action="{{ url_for('jobs.update_status', job_id=job.id) }}" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
+        {% for s in ['Unscheduled','Scheduled','In Progress','Complete','On Hold'] %}
+          <button type="submit" name="status" value="{{ s }}"
+            class="btn btn--sm {% if job.status == s %}btn--primary{% else %}btn--ghost{% endif %}">
+            {{ s }}
+          </button>
+        {% endfor %}
+      </form>
+      <form method="POST" action="{{ url_for('jobs.toggle_waiting_parts', job_id=job.id) }}">
+        <button type="submit" class="btn btn--sm {% if job.waiting_parts %}btn--danger{% else %}btn--ghost{% endif %}">
+          {% if job.waiting_parts %}⚠ Clear Waiting on Parts{% else %}Flag: Waiting on Parts{% endif %}
+        </button>
+      </form>
+    </div>
+
+    <!-- Job details -->
+    <div class="card" style="margin-top:1rem;">
+      <div class="card-title">Job Details</div>
+      {% set rows = [
+        ('Job Number',    job.job_number),
+        ('EAS / Project', job.eas_number or '—'),
+        ('Customer PO',   job.customers_po or '—'),
+        ('Part Number',   job.part_number or '—'),
+        ('Description',   job.part_desc or job.description or '—'),
+        ('Quantity',      job.quantity|int),
+        ('Due Date',      job.due_date or '—'),
+        ('Sale Value',    '£' ~ '%.2f'|format(job.sale_value) if job.sale_value else '—'),
+        ('Team',          job.team or 'General'),
+        ('Source',        job.source|upper if job.source else 'MANUAL'),
+        ('Created',       job.created_at[:10]),
+      ] %}
+      {% for k, v in rows %}
+      <div class="detail-row">
+        <span class="detail-key">{{ k }}</span>
+        <span class="text-sec">{{ v }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <div class="detail-col">
+    <div class="card">
+      <div class="card-title">Planning Notes</div>
+      <p class="text-sec" style="font-size:.875rem;margin-top:.5rem;">
+        Scheduling and assignment coming in Section 6 (Gantt planner).
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

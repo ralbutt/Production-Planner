@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Sales Orders{% endblock %}
+
+{% block head %}
+<style>
+.so-card { cursor:pointer; transition:border-color .15s,background .15s; }
+.so-card:hover { border-color:rgba(93,224,138,.3); background:rgba(93,224,138,.03); }
+.so-card.open  { border-color:var(--green); }
+.so-detail { display:none; }
+.so-detail.open { display:block; }
+.track-pill { display:inline-flex;align-items:center;gap:.3rem;font-family:var(--font-head);font-size:.67rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 10px;border-radius:20px; }
+.pill-on_track    { background:rgba(93,224,138,.15);color:var(--green); }
+.pill-at_risk     { background:rgba(255,152,0,.15);color:var(--amber); }
+.pill-late        { background:rgba(244,67,54,.15);color:var(--red); }
+.pill-unscheduled { background:rgba(90,122,154,.15);color:var(--text-sec); }
+.pill-complete    { background:rgba(93,224,138,.1);color:var(--green); }
+.pill-no_wo       { background:rgba(244,67,54,.15);color:var(--red); }
+.week-chip { font-family:var(--font-head);font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:4px;display:inline-flex;align-items:center;gap:.3rem; }
+.chip-ok   { background:rgba(93,224,138,.1);border:1px solid rgba(93,224,138,.25);color:var(--green); }
+.chip-late { background:rgba(244,67,54,.1);border:1px solid rgba(244,67,54,.25);color:var(--red); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Sales Orders</h1>
+    <p class="page-sub">Plan status updates live from the schedule · Tap any card to see build detail</p>
+  </div>
+</div>
+
+{% for cat,msg in get_flashed_messages(with_categories=true) %}
+<div class="alert alert--{{ 'success' if cat=='success' else 'error' }}">{{ msg }}</div>
+{% endfor %}
+
+<!-- Summary strip -->
+<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+  {% for key,label,col in [('on_track','On Track','var(--green)'),('at_risk','At Risk','var(--amber)'),('late','Late','var(--red)'),('unscheduled','Unscheduled','var(--text-sec)'),('no_wo','No WO','var(--red)'),('complete','Complete','var(--text-sec)')] %}
+  {% if counts[key] > 0 %}
+  <div class="card" style="padding:.5rem .85rem;display:flex;align-items:center;gap:.6rem;">
+    <span style="font-family:var(--font-head);font-size:1.3rem;font-weight:800;color:{{ col }};line-height:1;">{{ counts[key] }}</span>
+    <span style="font-family:var(--font-head);font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-sec);">{{ label }}</span>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+<!-- SO cards -->
+{% for so in sales_orders %}
+{% set is_past = so.due_date and so.due_date < today %}
+{% set stat = so.track_status %}
+<div class="card so-card {% if loop.index == 1 %}open{% endif %}" id="so-{{ loop.index }}"
+     style="padding:0;margin-bottom:.5rem;"
+     onclick="toggleSO({{ loop.index }})">
+
+  <!-- Card header -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:.85rem 1rem;gap:.75rem;">
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.2rem;">
+        <span style="font-family:var(--font-head);font-weight:800;font-size:.95rem;color:var(--green);">{{ so.so_ref }}</span>
+        <span class="track-pill pill-{{ stat }}">
+          {% if stat=='on_track' %}✓ On Track
+          {% elif stat=='at_risk' %}⚠ At Risk
+          {% elif stat=='late' %}✗ Late
+          {% elif stat=='complete' %}✓ Complete
+          {% elif stat=='no_wo' %}✗ No Works Order
+          {% else %}○ Unscheduled{% endif %}
+        </span>
+      </div>
+      <div style="font-size:.83rem;color:var(--text);margin-bottom:.15rem;">{{ so.description }}</div>
+      <div style="display:flex;gap:.75rem;font-size:.78rem;color:var(--text-sec);flex-wrap:wrap;">
+        <span>{{ so.customer }}</span>
+        <span>{{ so.part_number }}</span>
+        {% if so.due_date %}
+        <span style="color:{% if is_past %}var(--red){% else %}var(--text-sec){% endif %};font-weight:{% if is_past %}700{% else %}400{% endif %};">
+          Due {{ so.due_date }}{% if is_past %} ⚠{% endif %}
+        </span>
+        {% endif %}
+        <span>SO qty: <strong style="color:var(--text);">{{ so.so_qty_needed }}</strong></span>
+        {% if so.sale_value %}<span>£{{ "%.2f"|format(so.sale_value) }}</span>{% endif %}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;flex-shrink:0;">
+      {% if so.expected_week %}
+      <div style="font-size:.75rem;color:{% if so.expected_week > (so.due_date or '9999') %}var(--red){% else %}var(--green){% endif %};">
+        W/C {{ so.expected_week }}
+      </div>
+      {% endif %}
+      <span style="color:var(--text-sec);font-size:.9rem;" id="arrow-{{ loop.index }}">▲</span>
+    </div>
+  </div>
+
+  <!-- Expandable detail -->
+  <div class="so-detail {% if loop.index == 1 %}open{% endif %}" id="detail-{{ loop.index }}"
+       onclick="event.stopPropagation()">
+    <div style="border-top:1px solid var(--border);padding:1rem;background:rgba(0,0,0,.2);">
+
+      {% if not so.has_wo %}
+      <div style="color:var(--red);font-family:var(--font-head);font-weight:700;font-size:.82rem;padding:.6rem .8rem;background:rgba(244,67,54,.08);border:1px solid rgba(244,67,54,.22);border-radius:6px;">
+        ⚠ No Works Order exists — raise one in Emax before this can be planned
+      </div>
+
+      {% elif not so.week_groups %}
+      <div style="color:var(--text-sec);font-size:.84rem;">
+        {% if so.wos %}
+        {{ so.wos|length }} WO{{ 's' if so.wos|length>1 }} in system ({{ so.wos[0].status }}) — not yet scheduled. Run the plan to assign operators.
+        {% else %}
+        No WOs found for this part.
+        {% endif %}
+      </div>
+
+      {% else %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <!-- Left: WOs -->
+        <div>
+          <div style="font-family:var(--font-head);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.5rem;">Works Orders</div>
+          {% for wo in so.wos %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid rgba(26,48,85,.35);font-size:.82rem;">
+            <span style="font-family:var(--font-head);font-weight:700;color:var(--text);">{{ wo.job_number }}</span>
+            <div style="display:flex;align-items:center;gap:.4rem;">
+              <span style="color:var(--text-sec);">{{ wo.quantity|int }} units</span>
+              <span class="badge badge--{% if wo.status=='In Progress' %}amber{% elif wo.status=='Scheduled' %}green{% else %}neutral{% endif %}">{{ wo.status }}</span>
+            </div>
+          </div>
+          {% endfor %}
+          <!-- SO vs WO qty -->
+          <div style="margin-top:.6rem;padding:.5rem .7rem;background:rgba(26,48,85,.25);border-radius:6px;font-size:.78rem;color:var(--text-sec);">
+            SO needs <strong style="color:var(--text);">{{ so.so_qty_needed }}</strong>
+            · WOs build <strong style="color:var(--text);">{{ so.wo_qty_total }}</strong>
+            {% if so.wo_qty_total > so.so_qty_needed %}
+            · <span style="color:var(--green);">{{ so.wo_qty_total - so.so_qty_needed }} extra to stock</span>
+            {% endif %}
+            {% if so.scheduled_before_due >= so.so_qty_needed %}
+            <br><span style="color:var(--green);">✓ {{ so.so_qty_needed }} units scheduled before due date</span>
+            {% elif so.scheduled_before_due > 0 %}
+            <br><span style="color:var(--amber);">⚠ Only {{ so.scheduled_before_due }} of {{ so.so_qty_needed }} units before due date</span>
+            {% else %}
+            <br><span style="color:var(--red);">✗ No units scheduled before due date</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Right: Build schedule -->
+        <div>
+          <div style="font-family:var(--font-head);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.5rem;">Build Schedule</div>
+          {% for week, ops in so.week_groups.items() %}
+          <div style="margin-bottom:.5rem;">
+            <div style="font-family:var(--font-head);font-size:.78rem;font-weight:700;color:{% if week > (so.due_date or '9999') %}var(--red){% else %}var(--text){% endif %};margin-bottom:.25rem;">
+              W/C {{ week }}{% if week > (so.due_date or '9999') %} <span style="font-size:.65rem;color:var(--red);">after due date</span>{% endif %}
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:.3rem;">
+              {% for op in ops %}
+              <span class="week-chip {% if op.after_due %}chip-late{% else %}chip-ok{% endif %}">
+                {{ op.emp_name.split()[0] }} · {{ op.hours }}h
+              </span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+          <!-- Expected vs due -->
+          {% if so.expected_week %}
+          <div style="margin-top:.5rem;padding:.45rem .7rem;border-radius:6px;font-size:.78rem;
+            {% if so.expected_week > (so.due_date or '9999') %}background:rgba(244,67,54,.08);border:1px solid rgba(244,67,54,.2);color:var(--red);
+            {% else %}background:rgba(93,224,138,.06);border:1px solid rgba(93,224,138,.18);color:var(--green);{% endif %}">
+            {% if so.expected_week > (so.due_date or '9999') %}
+            ⚠ Expected completion W/C {{ so.expected_week }} — after due date {{ so.due_date }}
+            {% else %}
+            ✓ Expected completion W/C {{ so.expected_week }} — on time
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="card" style="padding:2rem;text-align:center;color:var(--text-sec);">
+  No sales orders found. Import your Sales Delivery Lines from Emax first.
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleSO(idx){
+  const card   = document.getElementById('so-' + idx);
+  const detail = document.getElementById('detail-' + idx);
+  const arrow  = document.getElementById('arrow-' + idx);
+  if(!card||!detail) return;
+  const open = detail.classList.toggle('open');
+  card.classList.toggle('open', open);
+  if(arrow) arrow.textContent = open ? '▲' : '▼';
+}
+// First card open by default — already handled by class in template
+</script>
+{% endblock %}

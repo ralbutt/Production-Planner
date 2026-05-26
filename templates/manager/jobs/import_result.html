@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Import Results{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Import Complete</h1>
+    <p class="page-sub">
+      {% if file_type == 'works_orders' %}Works Orders{% else %}Sales Delivery Lines{% endif %}
+    </p>
+  </div>
+  <a href="{{ url_for('jobs.list_jobs') }}" class="btn btn--primary">View Jobs →</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;max-width:560px;">
+  <div class="card" style="padding:1.25rem 1.5rem;text-align:center;">
+    <div style="font-family:var(--font-head);font-size:2.5rem;font-weight:800;color:var(--green);">{{ created }}</div>
+    <div style="font-family:var(--font-head);font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-sec);margin-top:.3rem;">
+      New Jobs Created
+    </div>
+  </div>
+  <div class="card" style="padding:1.25rem 1.5rem;text-align:center;">
+    <div style="font-family:var(--font-head);font-size:2.5rem;font-weight:800;color:var(--amber);">{{ unmatched|length }}</div>
+    <div style="font-family:var(--font-head);font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-sec);margin-top:.3rem;">
+      Part Not in Library
+    </div>
+  </div>
+</div>
+
+{% if created == 0 and unmatched|length == 0 %}
+<div class="card" style="padding:1.25rem 1.5rem;max-width:560px;color:var(--text-sec);font-size:.9rem;">
+  ✓ Everything in this file is already in the system — nothing new to import.
+</div>
+{% endif %}
+
+<!-- Created -->
+{% if matched %}
+<div style="margin-bottom:1.5rem;">
+  <h2 style="font-family:var(--font-head);font-size:1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-bottom:.75rem;">
+    ✓ Created ({{ created }})
+  </h2>
+  <div class="card" style="padding:0;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Job Number</th>
+          <th>EAS</th>
+          <th>Customer</th>
+          <th>Part</th>
+          <th>Qty</th>
+          <th>Due Date</th>
+          {% if file_type != 'works_orders' %}<th>Value</th>{% endif %}
+          <th>Flags</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for j in matched %}
+        <tr>
+          <td><strong style="color:var(--green);">{{ j.job_number }}</strong></td>
+          <td class="text-sec">{{ j.eas_number or '—' }}</td>
+          <td class="text-sec" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ j.customer or '—' }}</td>
+          <td class="text-sec">{{ j.item_code or '—' }}</td>
+          <td class="text-sec">{{ j.quantity|int }}</td>
+          <td class="text-sec">{{ j.due_date or '—' }}</td>
+          {% if file_type != 'works_orders' %}
+          <td class="text-sec">{% if j.sale_value %}£{{ '%.0f'|format(j.sale_value) }}{% else %}—{% endif %}</td>
+          {% endif %}
+          <td>
+            {% if j.for_stock %}<span class="badge badge--neutral">Stock</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Unmatched -->
+{% if unmatched %}
+<div>
+  <h2 style="font-family:var(--font-head);font-size:1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:.5rem;">
+    ⚠ Part Not in Library ({{ unmatched|length }})
+  </h2>
+  <p style="color:var(--text-sec);font-size:.875rem;margin-bottom:.75rem;">
+    These were skipped. Add the part numbers to the
+    <a href="{{ url_for('library.list_parts') }}">Product Library</a> then re-import — the purchaser's next upload will pick them up automatically.
+  </p>
+  <div class="card" style="padding:0;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Job Number</th>
+          <th>EAS</th>
+          <th>Item Code</th>
+          <th>Description</th>
+          <th>Qty</th>
+          <th>Due Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for j in unmatched %}
+        <tr>
+          <td class="text-sec">{{ j.job_number }}</td>
+          <td class="text-sec">{{ j.eas_number or '—' }}</td>
+          <td style="color:var(--amber);font-weight:600;">{{ j.item_code or '—' }}</td>
+          <td class="text-sec" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ j.description or '—' }}</td>
+          <td class="text-sec">{{ j.quantity|int }}</td>
+          <td class="text-sec">{{ j.due_date or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
