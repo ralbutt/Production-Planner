@@ -1,0 +1,19 @@
+# Database (don't commit - contains real data)
+*.db
+*.db-journal
+*.db-wal
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+env/
+
+# Uploads
+/tmp/ra_uploads/
+
+# OS
+.DS_Store
+Thumbs.db
